@@ -17,6 +17,10 @@ public class WheelMenuController : MonoBehaviour
     private readonly Stack<string> nodeHistory = new();
     private string currentNodeId = "root";
     private string lastLine = "";
+    private bool isShowingResponseLine;
+
+    /// <summary>True when the player can go back one step (either undo a response or return to previous node).</summary>
+    public bool CanGoBack => nodeHistory.Count > 0 || isShowingResponseLine;
 
 
     private void Awake()
@@ -28,7 +32,7 @@ public class WheelMenuController : MonoBehaviour
     private void BuildNodes()
     {
         nodes["root"] = new Node(
-            "Hey… come here a second. How are you, really?",
+            "Hey? come here a second. How are you, really?",
             new List<Option>
             {
                 new Option("I'm okay today.", nextNodeId: "okay"),
@@ -43,8 +47,8 @@ public class WheelMenuController : MonoBehaviour
             new List<Option>
             {
                 new Option("Keep it light.", responseLine: "Okay. Then let's keep it gentle. One small good thing from today?"),
-                new Option("Quick check-in.", responseLine: "Alright. Body first: water, food, and a place to sit—are those covered?"),
-                new Option("Actually… I need support.", nextNodeId: "support")
+                new Option("Quick check-in.", responseLine: "Alright. Body first: water, food, and a place to sit?are those covered?"),
+                new Option("Actually? I need support.", nextNodeId: "support")
             }
         );
 
@@ -52,8 +56,8 @@ public class WheelMenuController : MonoBehaviour
             "Then that's what we'll do. What kind of support fits right now?",
             new List<Option>
             {
-                new Option("Reassurance.", responseLine: "Hey. You're okay. You don't have to solve everything today—just keep yourself safe. That's enough."),
-                new Option("Grounding.", responseLine: "Can you feel your feet on the floor? One slow breath in… and out. Good. Stay with me."),
+                new Option("Reassurance.", responseLine: "Hey. You're okay. You don't have to solve everything today?just keep yourself safe. That's enough."),
+                new Option("Grounding.", responseLine: "Can you feel your feet on the floor? One slow breath in? and out. Good. Stay with me."),
                 new Option("Help me choose one step.", responseLine: "Okay. What's the smallest next thing that would make today 1% easier?")            }
         );
 
@@ -62,7 +66,7 @@ public class WheelMenuController : MonoBehaviour
             new List<Option>
             {
                 new Option("Conflict / people.", responseLine: "Ugh. I'm sorry. Do you want to vent, or do you want grounding first?"),
-                new Option("Bad news.", responseLine: "Okay. That’s heavy. You don’t have to carry it alone—tell me what happened."),
+                new Option("Bad news.", responseLine: "Okay. That?s heavy. You don?t have to carry it alone?tell me what happened."),
                 new Option("Overwhelm / too much.", responseLine: "That makes sense. Let's shrink the day. What can wait, and what can't?")
             }
         );
@@ -71,7 +75,7 @@ public class WheelMenuController : MonoBehaviour
             "That's okay. 'I don't know' still counts as information. Let's narrow it down.",
             new List<Option>
             {
-                new Option("Body feels bad.", responseLine: "Okay. Let's get basic care first—water, food, rest. What's missing right now?"),
+                new Option("Body feels bad.", responseLine: "Okay. Let's get basic care first?water, food, rest. What's missing right now?"),
                 new Option("Emotion feels bad.", responseLine: "Got it. If you had to name it loosely: anxious, sad, angry, or numb?"),
                 new Option("Just empty.", responseLine: "You're allowed to be empty. Let's do minimum-viable-human for a bit.")
             }
@@ -84,6 +88,7 @@ public class WheelMenuController : MonoBehaviour
             nodeHistory.Push(currentNodeId);
 
         currentNodeId = nodeId;
+        isShowingResponseLine = false;
 
         if (!nodes.TryGetValue(nodeId, out var node))
         {
@@ -111,9 +116,10 @@ public class WheelMenuController : MonoBehaviour
                 }
                 else if (!string.IsNullOrEmpty(opt.ResponseLine))
                 {
+                    nodeHistory.Push(currentNodeId); // Treat response as a step so Back undoes it first
+                    isShowingResponseLine = true;
                     esaiResponseText.text = opt.ResponseLine;
                     lastLine = opt.ResponseLine;
-                    // For MVP, keep the options up.
                 }
             });
         }
@@ -156,15 +162,21 @@ public class WheelMenuController : MonoBehaviour
 
     public void BackOne()
     {
-        if (nodeHistory.Count > 0)
+        if (isShowingResponseLine)
+        {
+            // Undo the response: restore this node's initial EsaiLine
+            isShowingResponseLine = false;
+            nodeHistory.Pop(); // Remove the entry we pushed when displaying the response
+            if (nodes.TryGetValue(currentNodeId, out var node))
+            {
+                esaiResponseText.text = node.EsaiLine;
+                lastLine = node.EsaiLine;
+            }
+        }
+        else if (nodeHistory.Count > 0)
         {
             var prev = nodeHistory.Pop();
-            ShowNode(prev, pushHistory: false); // IMPORTANT: don’t re-push when going back
-        }
-        else
-        {
-            // Already at earliest point; do nothing.
-            // (Or optionally keep showing current node)
+            ShowNode(prev, pushHistory: false); // Don't re-push when going back
         }
     }
 

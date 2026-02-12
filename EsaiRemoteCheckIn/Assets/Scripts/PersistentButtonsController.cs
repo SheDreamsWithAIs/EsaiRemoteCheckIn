@@ -28,4 +28,10 @@ public class PersistentButtonsController : MonoBehaviour
         if (endButton != null)
             endButton.onClick.AddListener(wheelController.EndSession);
     }
+
+    private void Update()
+    {
+        if (backButton != null)
+            backButton.interactable = wheelController.CanGoBack;
+    }
 }

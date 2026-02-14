@@ -57,17 +57,28 @@ using UnityEngine;
                 string fallback = Application.isEditor
                     ? $"{MissingKeyPrefix} {textKey}"
                     : FallbackText;
-                return new LineResult { text = fallback, selectedVariantId = -1 };
+                return new LineResult { text = fallback, selectedVariantId = -1, portraitRequest = null };
             }
 
             int variantIndex = SelectVariant(entry, textKey);
-            return new LineResult { text = entry.variants[variantIndex].text, selectedVariantId = variantIndex };
+            var req = entry.HasPortraitRequest() ? (PortraitRequest?)entry.ToPortraitRequest() : (PortraitRequest?)null;
+            return new LineResult { text = entry.variants[variantIndex].text, selectedVariantId = variantIndex, portraitRequest = req };
+        }
+
+        /// <summary>Get portrait request for a text key, if the line specifies one. Null = use node default.</summary>
+        public PortraitRequest? GetPortraitRequest(string textKey)
+        {
+            EnsureLoaded();
+            if (!_lines.TryGetValue(textKey, out var entry) || !entry.HasPortraitRequest())
+                return null;
+            return entry.ToPortraitRequest();
         }
 
         public struct LineResult
         {
             public string text;
             public int selectedVariantId;
+            public PortraitRequest? portraitRequest;
         }
 
         /// <summary>Replay mode: return exact same text for selectedVariantId. No reroll.</summary>
@@ -167,6 +178,20 @@ using UnityEngine;
             public string key;
             public LineVariant[] variants;
             public LineRules rules;
+            public int portraitMood = -1;
+            public int portraitIntensity = -1;
+            public int portraitModifier = -1;
+
+            public bool HasPortraitRequest() =>
+                portraitMood >= 0 || portraitIntensity >= 0 || portraitModifier >= 0;
+
+            public PortraitRequest ToPortraitRequest()
+            {
+                var mood = portraitMood >= 0 ? (PortraitMood)portraitMood : PortraitMood.Friendly;
+                var intensity = portraitIntensity >= 0 ? Mathf.Clamp(portraitIntensity, 0, 4) : 0;
+                var modifier = portraitModifier >= 0 ? (PortraitModifier)portraitModifier : PortraitModifier.Default;
+                return new PortraitRequest(mood, intensity, modifier);
+            }
         }
 
         [Serializable]

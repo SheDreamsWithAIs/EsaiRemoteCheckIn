@@ -18,13 +18,17 @@ All of Esai's spoken lines live in **`Assets/Resources/Dialogue/Lines.json`**. E
     { "text": "Your line here.", "weight": 1 },
     { "text": "Alternative variant.", "weight": 1 }
   ],
-  "rules": { "noRepeatWindow": 5 }
+  "rules": { "noRepeatWindow": 5 },
+  "portraitMood": 7,
+  "portraitIntensity": 1,
+  "portraitModifier": 0
 }
 ```
 
 - **key** — Unique identifier. Use dot notation: `branch.context` (e.g. `reassure.general`, `grounding.failed.no`).
 - **variants** — One or more possible lines. The game picks one (weighted randomly). Add variants for variety; the same key can have many.
 - **rules.noRepeatWindow** — Optional. If set (e.g. 5), the game avoids repeating the same variant for the last N picks. Good for reassurance and other repeatable lines.
+- **portraitMood**, **portraitIntensity**, **portraitModifier** — Optional. Portrait is controlled **per text key**, not per node. If a line has these, Esai's portrait uses them; otherwise the node's default portrait is used. See "Portrait per text key" below.
 
 ### Node Structure
 
@@ -154,6 +158,21 @@ When you write a line, you can suggest a **mood** and **intensity** for the port
 | MouthOpen | Mid-speech, surprised |
 | WideEyes | Surprised, alert |
 
+### Portrait per text key
+
+Portraits can be set **per text key** in Lines.json. This lets different lines on the same node use different portraits. For example, if a node shows `okay.keep_light` when the player picks "Keep it light" and `okay.quick_checkin` when they pick "Quick check-in," each line can have its own mood.
+
+Add to any line entry:
+- **portraitMood** — Integer (0–12). See Mood table below.
+- **portraitIntensity** — 0–4. Omit or use -1 to use default.
+- **portraitModifier** — Integer (0–12). See Modifier table below. Omit or use -1 for Default.
+
+If a line has any of these (≥ 0), the game uses them for that line. Otherwise it falls back to the node's PortraitRequest.
+
+**Mood enum (portraitMood):** 0=Neutral, 1=Friendly, 2=Concerned, 3=Firm, 4=Sad, 5=Shocked, 6=Devastated, 7=Warm, 8=Amused, 9=Embarrassed, 10=Excited, 11=Surprised, 12=Calm
+
+**Modifier enum (portraitModifier):** 0=Default, 1=SideLookLeft, 2=SideLookRight, 3=LookingDown, 4=DirectEyeContact, 5=OpenHands, 6=HugOffer, 7=SweatDrop, 8=NoFace, 9=MouthOpen, 10=WideEyes, 11=LeftHandOut, 12=Waving
+
 ### How to Note Mood/Intensity/Modifier
 
 As you write, you can add a note like:
@@ -163,7 +182,7 @@ reassure.general — [Mood: Warm, Intensity: 1, Modifier: Default]
 "You don't need to earn rest. You're allowed to be still."
 ```
 
-Seraphine can use these notes when assigning portraits in the PortraitDatabase or when setting PortraitRequest on nodes. The system will pick the closest matching portrait if an exact match isn't available.
+Seraphine can add `portraitMood`, `portraitIntensity`, `portraitModifier` to the Lines.json entry for that key. The system will pick the closest matching portrait if an exact match isn't available.
 
 ---
 

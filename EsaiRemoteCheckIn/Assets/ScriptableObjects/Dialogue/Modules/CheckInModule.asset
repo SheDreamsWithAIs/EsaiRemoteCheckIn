@@ -20,8 +20,8 @@ MonoBehaviour:
     textKey: root.greeting
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 7
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -57,8 +57,8 @@ MonoBehaviour:
     textKey: okay.prompt
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 1
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -88,8 +88,8 @@ MonoBehaviour:
     textKey: support.prompt
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 7
+      intensity: 2
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -119,8 +119,8 @@ MonoBehaviour:
     textKey: grounding.exercise
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 12
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -138,8 +138,8 @@ MonoBehaviour:
     textKey: grounding.followup.question
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 1
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -169,8 +169,8 @@ MonoBehaviour:
     textKey: 
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 7
+      intensity: 2
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -223,8 +223,8 @@ MonoBehaviour:
     textKey: grounding.failed.no
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 7
+      intensity: 2
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -242,8 +242,8 @@ MonoBehaviour:
     textKey: grounding.failed.dontknow
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 7
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -261,8 +261,8 @@ MonoBehaviour:
     textKey: follow_up.prompt
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 1
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -280,8 +280,8 @@ MonoBehaviour:
     textKey: redirect.prelude
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 1
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -299,8 +299,8 @@ MonoBehaviour:
     textKey: hub.checkin
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 1
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -361,8 +361,8 @@ MonoBehaviour:
     textKey: reassure.general
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 7
+      intensity: 2
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -380,8 +380,8 @@ MonoBehaviour:
     textKey: something.prompt
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 2
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -442,8 +442,8 @@ MonoBehaviour:
     textKey: coming_soon
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 1
+      intensity: 1
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 
@@ -461,8 +461,8 @@ MonoBehaviour:
     textKey: session_close
     esaiLine: 
     portraitRequest:
-      mood: 0
-      intensity: 0
+      mood: 7
+      intensity: 2
       modifier: 0
     advanceMode: 0
     tapContinueNodeId: 

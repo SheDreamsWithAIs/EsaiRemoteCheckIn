@@ -29,7 +29,8 @@ public enum PortraitMood
     Amused,
     Embarrassed,
     Excited,
-    Surprised
+    Surprised,
+    Calm
 }
 
 public enum PortraitModifier
@@ -44,7 +45,9 @@ public enum PortraitModifier
     SweatDrop,
     NoFace,
     MouthOpen,
-    WideEyes
+    WideEyes,
+    LeftHandOut,
+    Waving
 }
 
 [Serializable]

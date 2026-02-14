@@ -13,10 +13,14 @@ MonoBehaviour:
   m_Name: PortraitDatabase
   m_EditorClassIdentifier: Assembly-CSharp::PortraitDatabaseSO
   entries:
+  - mood: 12
+    intensity: 2
+    modifier: 11
+    sprite: {fileID: 8032520720695178910, guid: 1395266606c7b994ca778981836afad0, type: 3}
   - mood: 2
     intensity: 2
-    modifier: 2
-    sprite: {fileID: -45329914808799628, guid: 1ef4133806fb1044bac093a1b90546bb, type: 3}
+    modifier: 0
+    sprite: {fileID: 1408682852790621463, guid: 640bce76a70499b4c9d7a1dffab82c32, type: 3}
   - mood: 6
     intensity: 2
     modifier: 9
@@ -39,9 +43,13 @@ MonoBehaviour:
     sprite: {fileID: -7145028649077751593, guid: 2be938a8b1a0aa44abcda78caad75a49, type: 3}
   - mood: 1
     intensity: 2
-    modifier: 0
+    modifier: 12
     sprite: {fileID: 7141244427389643675, guid: 8b51af8a2ae70de40bd6144c6d2646fa, type: 3}
   - mood: 11
     intensity: 2
     modifier: 10
     sprite: {fileID: 3740170487912381028, guid: 32af78b8bc5b0e548ae14b6fc721c3d4, type: 3}
+  - mood: 7
+    intensity: 2
+    modifier: 0
+    sprite: {fileID: -4837102228779070403, guid: fd72ed4b23df8804fb4db06d899d108e, type: 3}

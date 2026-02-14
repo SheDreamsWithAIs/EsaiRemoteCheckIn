@@ -345,7 +345,7 @@ public class WheelMenuController : MonoBehaviour
             return;
         }
 
-        string displayLine = node.GetDisplayLine(_linesService, entryContext, replayVariantId >= 0 ? replayVariantId : (int?)null, out int variantId);
+        string displayLine = node.GetDisplayLine(_linesService, entryContext, replayVariantId >= 0 ? replayVariantId : (int?)null, out int variantId, out string effectiveTextKey);
         currentSelectedVariantId = variantId;
         esaiResponseText.text = displayLine;
         lastLine = displayLine;
@@ -360,7 +360,11 @@ public class WheelMenuController : MonoBehaviour
             }
             else
             {
-                var result = _portraitResolver.Resolve(node.PortraitRequest);
+                var portraitReq = !string.IsNullOrEmpty(effectiveTextKey)
+                    ? _linesService.GetPortraitRequest(effectiveTextKey)
+                    : (PortraitRequest?)null;
+                var req = portraitReq ?? node.PortraitRequest;
+                var result = _portraitResolver.Resolve(req);
                 portraitSprite = result.sprite;
                 _currentResolvedPortraitKey = result.resolvedKey;
             }
@@ -429,6 +433,14 @@ public class WheelMenuController : MonoBehaviour
                     isShowingResponseLine = true;
                     esaiResponseText.text = lineResult.text;
                     lastLine = lineResult.text;
+                    if (_portraitResolver != null && portraitImage != null && nodes.TryGetValue(currentNodeId, out var respNode))
+                    {
+                        var portraitReq = lineResult.portraitRequest ?? respNode.PortraitRequest;
+                        var result = _portraitResolver.Resolve(portraitReq);
+                        portraitImage.sprite = result.sprite;
+                        portraitImage.enabled = result.sprite != null;
+                        _currentResolvedPortraitKey = result.resolvedKey;
+                    }
                 }
                 else if (!string.IsNullOrEmpty(captureOpt.ResponseLine))
                 {
@@ -436,6 +448,13 @@ public class WheelMenuController : MonoBehaviour
                     isShowingResponseLine = true;
                     esaiResponseText.text = captureOpt.ResponseLine;
                     lastLine = captureOpt.ResponseLine;
+                    if (_portraitResolver != null && portraitImage != null && nodes.TryGetValue(currentNodeId, out var respNode))
+                    {
+                        var result = _portraitResolver.Resolve(respNode.PortraitRequest);
+                        portraitImage.sprite = result.sprite;
+                        portraitImage.enabled = result.sprite != null;
+                        _currentResolvedPortraitKey = result.resolvedKey;
+                    }
                 }
             });
         }
@@ -484,8 +503,9 @@ public class WheelMenuController : MonoBehaviour
             PortraitRequest = portraitRequest ?? new PortraitRequest(PortraitMood.Friendly, 0, PortraitModifier.Default);
         }
 
-        public string GetDisplayLine(LinesService lines, string entryContext, int? replayVariantId, out int variantId)
+        public string GetDisplayLine(LinesService lines, string entryContext, int? replayVariantId, out int variantId, out string effectiveTextKey)
         {
+            effectiveTextKey = null;
             string key = null;
             if (!string.IsNullOrEmpty(entryContext) && TextKeyByContext != null &&
                 TextKeyByContext.TryGetValue(entryContext, out var ctxKey))
@@ -495,6 +515,7 @@ public class WheelMenuController : MonoBehaviour
 
             if (!string.IsNullOrEmpty(key))
             {
+                effectiveTextKey = key;
                 if (replayVariantId.HasValue && replayVariantId.Value >= 0)
                 {
                     variantId = replayVariantId.Value;

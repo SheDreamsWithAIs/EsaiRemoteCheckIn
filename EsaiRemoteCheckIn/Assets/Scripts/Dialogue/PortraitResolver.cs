@@ -36,7 +36,10 @@ public class PortraitResolver
         {
             if (Try(request.mood, i, PortraitModifier.Default, out k)) return k;
         }
-        if (Try(request.mood, 0, PortraitModifier.Default, out k)) return k;
+        for (int i = intensity + 1; i <= 4; i++)
+        {
+            if (Try(request.mood, i, PortraitModifier.Default, out k)) return k;
+        }
         if (Try(PortraitMood.Neutral, 0, PortraitModifier.Default, out k)) return k;
 
         return new PortraitKey(request.mood, intensity, request.modifier);

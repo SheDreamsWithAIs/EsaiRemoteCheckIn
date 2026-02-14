@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b8432d3c5b64cb40b9a317bbe47481c, type: 3}
+  m_Name: PortraitDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::PortraitDatabaseSO
+  entries:
+  - mood: 2
+    intensity: 2
+    modifier: 2
+    sprite: {fileID: -45329914808799628, guid: 1ef4133806fb1044bac093a1b90546bb, type: 3}
+  - mood: 6
+    intensity: 2
+    modifier: 9
+    sprite: {fileID: 8532464257217531504, guid: cec0b26ca15a48c4b9d05eae9b1556ff, type: 3}
+  - mood: 10
+    intensity: 3
+    modifier: 0
+    sprite: {fileID: -2226889819329824434, guid: 5823d92483fa3394cb958f4306f4ca19, type: 3}
+  - mood: 10
+    intensity: 3
+    modifier: 6
+    sprite: {fileID: -1170741915171151294, guid: 94b9f7310e76a6b4bbca2de8a6c52444, type: 3}
+  - mood: 3
+    intensity: 2
+    modifier: 8
+    sprite: {fileID: -7266945425471136123, guid: 5547d9d2de3473e4e81e5d081cbf5579, type: 3}
+  - mood: 1
+    intensity: 2
+    modifier: 0
+    sprite: {fileID: -7145028649077751593, guid: 2be938a8b1a0aa44abcda78caad75a49, type: 3}
+  - mood: 1
+    intensity: 2
+    modifier: 0
+    sprite: {fileID: 7141244427389643675, guid: 8b51af8a2ae70de40bd6144c6d2646fa, type: 3}
+  - mood: 11
+    intensity: 2
+    modifier: 10
+    sprite: {fileID: 3740170487912381028, guid: 32af78b8bc5b0e548ae14b6fc721c3d4, type: 3}

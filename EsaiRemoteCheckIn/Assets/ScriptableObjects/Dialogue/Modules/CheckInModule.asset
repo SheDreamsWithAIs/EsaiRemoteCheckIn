@@ -1,0 +1,471 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb9a16ba79a0c584786c8da669f6b441, type: 3}
+  m_Name: CheckInModule
+  m_EditorClassIdentifier: Assembly-CSharp::DialogueModuleSO
+  moduleId: checkin
+  entryNodeId: root
+  nodes:
+  - nodeId: root
+    speaker: 0
+    textKey: root.greeting
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: 
+      labelText: I'm okay today.
+      next: okay
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: I need support.
+      next: support
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: Something happened.
+      next: something
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: I don't know.
+      next: dontknow
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: okay
+    speaker: 0
+    textKey: okay.prompt
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: 
+      labelText: Keep it light.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: okay.keep_light
+    - labelKey: 
+      labelText: Quick check-in.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: okay.quick_checkin
+    - labelKey: 
+      labelText: Actually... I need support.
+      next: support
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: support
+    speaker: 0
+    textKey: support.prompt
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: 
+      labelText: Reassurance.
+      next: reassurance_response
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: Grounding.
+      next: grounding_exercise
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: Help me choose one step.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: support.one_step
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: grounding_exercise
+    speaker: 0
+    textKey: grounding.exercise
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.continue
+      labelText: Continue.
+      next: grounding_followup_1
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: grounding_followup_1
+    speaker: 0
+    textKey: grounding.followup.question
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.yes
+      labelText: Yes.
+      next: hub_checkin
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: labels.no
+      labelText: No.
+      next: grounding_exercise_2
+      specialNext: 0
+      entryContext: from_no
+      responseTextKey: 
+    - labelKey: 
+      labelText: I don't know.
+      next: grounding_exercise_2
+      specialNext: 0
+      entryContext: from_dontknow
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: grounding_exercise_2
+    speaker: 0
+    textKey: 
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.continue
+      labelText: Continue.
+      next: grounding_followup_2
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext:
+    - context: from_no
+      textKey: grounding.exercise2.from_no
+    - context: from_dontknow
+      textKey: grounding.exercise2.from_dontknow
+  - nodeId: grounding_followup_2
+    speaker: 0
+    textKey: grounding.followup.question
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.yes
+      labelText: Yes.
+      next: hub_checkin
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: labels.no
+      labelText: No.
+      next: grounding_failed_response_no
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: I don't know.
+      next: grounding_failed_response_dontknow
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: grounding_failed_response_no
+    speaker: 0
+    textKey: grounding.failed.no
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.okay
+      labelText: Okay.
+      next: follow_up
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: grounding_failed_response_dontknow
+    speaker: 0
+    textKey: grounding.failed.dontknow
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.okay
+      labelText: Okay.
+      next: redirect_prelude
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: follow_up
+    speaker: 0
+    textKey: follow_up.prompt
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.okay
+      labelText: Okay.
+      next: hub_checkin
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: redirect_prelude
+    speaker: 0
+    textKey: redirect.prelude
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.okay
+      labelText: Okay.
+      next: hub_redirect
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: hub_checkin
+    speaker: 0
+    textKey: hub.checkin
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: 
+      labelText: Check in again.
+      next: root
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: I'll get back to the day.
+      next: session_close
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: Something else.
+      next: coming_soon
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: hub_redirect
+    speaker: 0
+    textKey: hub.checkin
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: 
+      labelText: Check in again.
+      next: root
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: I'll get back to the day.
+      next: session_close
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    - labelKey: 
+      labelText: Something else.
+      next: coming_soon
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: reassurance_response
+    speaker: 0
+    textKey: reassure.general
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.thanks
+      labelText: Thanks.
+      next: hub_checkin
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: something
+    speaker: 0
+    textKey: something.prompt
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: 
+      labelText: Conflict / people.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: something.conflict
+    - labelKey: 
+      labelText: Bad news.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: something.bad_news
+    - labelKey: 
+      labelText: Overwhelm / too much.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: something.overwhelm
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: dontknow
+    speaker: 0
+    textKey: dontknow.prompt
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: 
+      labelText: Body feels bad.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: dontknow.body
+    - labelKey: 
+      labelText: Emotion feels bad.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: dontknow.emotion
+    - labelKey: 
+      labelText: Just empty.
+      next: 
+      specialNext: 0
+      entryContext: 
+      responseTextKey: dontknow.empty
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: coming_soon
+    speaker: 0
+    textKey: coming_soon
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options:
+    - labelKey: labels.back
+      labelText: Back.
+      next: hub_checkin
+      specialNext: 0
+      entryContext: 
+      responseTextKey: 
+    triggersEndOverlay: 0
+    textKeyByContext: []
+  - nodeId: session_close
+    speaker: 0
+    textKey: session_close
+    esaiLine: 
+    portraitRequest:
+      mood: 0
+      intensity: 0
+      modifier: 0
+    advanceMode: 0
+    tapContinueNodeId: 
+    options: []
+    triggersEndOverlay: 1
+    textKeyByContext: []

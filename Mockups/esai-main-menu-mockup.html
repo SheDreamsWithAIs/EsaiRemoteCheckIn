@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESAI Check-In - Main Menu Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F5F0E8 0%, #E8DCC8 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .menu-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px 30px;
+        }
+
+        .menu-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-container {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #A89580 0%, #8B7355 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 16px rgba(168, 149, 128, 0.3);
+        }
+
+        .menu-title {
+            font-size: 32px;
+            color: #4A3F35;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .menu-subtitle {
+            font-size: 16px;
+            color: #6B5D4F;
+            font-weight: 400;
+        }
+
+        .mode-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .mode-item {
+            background: #FDFBF7;
+            border: 2px solid #E8DCC8;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .mode-item:hover {
+            border-color: #A89580;
+            box-shadow: 0 4px 12px rgba(168, 149, 128, 0.2);
+        }
+
+        .mode-header {
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .mode-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #4A3F35;
+        }
+
+        .expand-icon {
+            font-size: 24px;
+            color: #A89580;
+            transition: transform 0.3s ease;
+        }
+
+        .mode-item.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        /* Breathing glow effect for Check-In card */
+        .mode-item.highlight {
+            animation: breathingGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes breathingGlow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(168, 149, 128, 0.4),
+                            0 0 40px rgba(168, 149, 128, 0.2);
+                border-color: #A89580;
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(168, 149, 128, 0.6),
+                            0 0 60px rgba(168, 149, 128, 0.3);
+                border-color: #C4B5A0;
+            }
+        }
+
+        .mode-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            padding: 0 20px;
+        }
+
+        .mode-item.expanded .mode-details {
+            max-height: 300px;
+            padding: 0 20px 20px 20px;
+        }
+
+        .mode-description {
+            font-size: 15px;
+            color: #5A4F45;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .mode-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-active {
+            background: #D4EDD4;
+            color: #2D5F2D;
+        }
+
+        .status-coming-soon {
+            background: #F0E6D2;
+            color: #8B7355;
+        }
+
+        .start-button {
+            width: 100%;
+            padding: 12px;
+            background: #A89580;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .start-button:hover {
+            background: #8B7355;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 149, 128, 0.3);
+        }
+
+        .start-button:disabled {
+            background: #D4C5B0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .start-button:disabled:hover {
+            box-shadow: none;
+        }
+
+        @media (max-width: 600px) {
+            .menu-container {
+                padding: 30px 20px;
+            }
+
+            .menu-title {
+                font-size: 28px;
+            }
+
+            .mode-header {
+                padding: 18px;
+            }
+
+            .mode-name {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="menu-container">
+        <!-- Menu Header -->
+        <div class="menu-header">
+            <div class="logo-container">
+                E
+            </div>
+            <h1 class="menu-title">ESAI Check-In</h1>
+            <p class="menu-subtitle">Choose your mode</p>
+        </div>
+
+        <!-- Mode List -->
+        <ul class="mode-list">
+            <!-- Check-In Mode -->
+            <li class="mode-item highlight" onclick="toggleExpand(this)">
+                <div class="mode-header">
+                    <span class="mode-name">Check-In</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="mode-details">
+                    <span class="mode-status status-active">Available Now</span>
+                    <p class="mode-description">
+                        Connect with ESAI for emotional support and guidance. Process your day, work through challenges, and practice healthy emotional regulation in a safe space.
+                    </p>
+                    <button class="start-button" onclick="startMode('check-in'); event.stopPropagation();">
+                        Start Check-In
+                    </button>
+                </div>
+            </li>
+
+            <!-- Shooting the Breeze Mode -->
+            <li class="mode-item" onclick="toggleExpand(this)">
+                <div class="mode-header">
+                    <span class="mode-name">Shooting the Breeze</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="mode-details">
+                    <span class="mode-status status-coming-soon">Coming Soon</span>
+                    <p class="mode-description">
+                        Casual, low-stakes conversation with ESAI. No pressure, no deep work—just friendly chat about whatever's on your mind. Practice connection without intensity.
+                    </p>
+                    <button class="start-button" disabled onclick="event.stopPropagation();">
+                        Coming Soon
+                    </button>
+                </div>
+            </li>
+
+            <!-- Exploring Interests Mode -->
+            <li class="mode-item" onclick="toggleExpand(this)">
+                <div class="mode-header">
+                    <span class="mode-name">Exploring Interests</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="mode-details">
+                    <span class="mode-status status-coming-soon">Coming Soon</span>
+                    <p class="mode-description">
+                        Discover and discuss your passions, hobbies, and curiosities. ESAI helps you explore what lights you up and supports you in pursuing what brings you joy.
+                    </p>
+                    <button class="start-button" disabled onclick="event.stopPropagation();">
+                        Coming Soon
+                    </button>
+                </div>
+            </li>
+
+            <!-- Vacation Mode -->
+            <li class="mode-item" onclick="toggleExpand(this)">
+                <div class="mode-header">
+                    <span class="mode-name">Vacation Mode</span>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="mode-details">
+                    <span class="mode-status status-coming-soon">Coming Soon</span>
+                    <p class="mode-description">
+                        Take a break with ESAI as your companion. Gentle reminders to actually relax, unwind, and rest—not just be productive in a different location. True restoration, not relocation.
+                    </p>
+                    <button class="start-button" disabled onclick="event.stopPropagation();">
+                        Coming Soon
+                    </button>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <script>
+        function toggleExpand(element) {
+            // Close all other items
+            const allItems = document.querySelectorAll('.mode-item');
+            allItems.forEach(item => {
+                if (item !== element && item.classList.contains('expanded')) {
+                    item.classList.remove('expanded');
+                }
+            });
+
+            // Toggle current item
+            element.classList.toggle('expanded');
+        }
+
+        function startMode(modeName) {
+            alert(`Starting ${modeName} mode (not implemented in mockup)`);
+        }
+    </script>
+</body>
+</html>

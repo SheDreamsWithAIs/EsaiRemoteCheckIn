@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESAI Check-In - Disclaimer Screen Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F5F0E8 0%, #E8DCC8 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .disclaimer-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .esai-portrait {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #D4C5B0 0%, #C4B5A0 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: #6B5D4F;
+            border: 3px solid #A89580;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #4A3F35;
+            margin-bottom: 40px;
+            font-weight: 600;
+        }
+
+        .disclaimer-text {
+            text-align: left;
+            margin-bottom: 40px;
+            color: #5A4F45;
+            line-height: 1.8;
+        }
+
+        .disclaimer-intro {
+            margin-bottom: 25px;
+            font-size: 16px;
+            color: #6B5D4F;
+            font-weight: 500;
+        }
+
+        .disclaimer-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .disclaimer-list li {
+            margin-bottom: 20px;
+            padding-left: 30px;
+            position: relative;
+            font-size: 15px;
+        }
+
+        .disclaimer-list li::before {
+            content: "•";
+            position: absolute;
+            left: 10px;
+            color: #A89580;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 40px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .crisis-button {
+            background: #8B7355;
+            color: white;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .crisis-button:hover {
+            background: #6B5D4F;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(139, 115, 85, 0.3);
+        }
+
+        .start-button {
+            background: #A89580;
+            color: white;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .start-button:hover {
+            background: #8B7355;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 149, 128, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .disclaimer-container {
+                padding: 40px 25px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="disclaimer-container">
+        <!-- ESAI Portrait Placeholder -->
+        <div class="esai-portrait">
+            E
+        </div>
+
+        <!-- Title -->
+        <h1>Welcome to ESAI Check-In</h1>
+
+        <!-- Disclaimer Text -->
+        <div class="disclaimer-text">
+            <p class="disclaimer-intro">Before we begin, please understand:</p>
+            
+            <ul class="disclaimer-list">
+                <li>This is a game designed to give your nervous system a safe place to unwind for a moment, not to treat mental health conditions</li>
+                
+                <li>ESAI is not a replacement for professional mental health care or crisis intervention</li>
+                
+                <li>If you are in crisis or need immediate support, please reach out to a professional</li>
+            </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="button-container">
+            <button class="crisis-button" onclick="searchCrisisResources()">
+                Find Crisis Resources
+            </button>
+            <button class="start-button" onclick="startGame()">
+                I Understand - Start
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function searchCrisisResources() {
+            window.open('https://www.google.com/search?q=mental+health+crisis+hotline', '_blank');
+        }
+
+        function startGame() {
+            alert('Proceeding to Main Menu (not implemented in mockup)');
+        }
+    </script>
+</body>
+</html>

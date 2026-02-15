@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESAI Check-In - Conversation Screen Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #F5F0E8 0%, #E8DCC8 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .checkin-container {
+            display: flex;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 1200px;
+            width: 100%;
+            min-height: 600px;
+            overflow: hidden;
+        }
+
+        /* Left Side - ESAI Portrait */
+        .portrait-section {
+            flex: 0 0 400px;
+            background: linear-gradient(135deg, #F5F0E8 0%, #E8DCC8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            border-right: 2px solid #E8DCC8;
+        }
+
+        .portrait-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .portrait-placeholder {
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 3/4;
+            background: linear-gradient(135deg, #D4C5B0 0%, #C4B5A0 100%);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            color: #6B5D4F;
+            border: 3px solid #A89580;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-button {
+            width: 100%;
+            max-width: 320px;
+            padding: 14px 24px;
+            background: #A89580;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .menu-button:hover {
+            background: #8B7355;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(168, 149, 128, 0.3);
+        }
+
+        /* Right Side - Conversation Interface */
+        .conversation-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 40px;
+        }
+
+        /* Dialogue Box */
+        .dialogue-box {
+            background: #F5EFE6;
+            border: 2px solid #D4C5B0;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dialogue-text {
+            font-size: 20px;
+            color: #4A3F35;
+            line-height: 1.7;
+        }
+
+        /* Custom scrollbar for dialogue box */
+        .dialogue-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dialogue-box::-webkit-scrollbar-track {
+            background: #E8DCC8;
+            border-radius: 10px;
+        }
+
+        .dialogue-box::-webkit-scrollbar-thumb {
+            background: #A89580;
+            border-radius: 10px;
+        }
+
+        .dialogue-box::-webkit-scrollbar-thumb:hover {
+            background: #8B7355;
+        }
+
+        /* Dialogue Wheel Placeholder */
+        .dialogue-wheel-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            min-height: 200px;
+        }
+
+        .dialogue-wheel-placeholder {
+            width: 100%;
+            max-width: 280px;
+            aspect-ratio: 1;
+            background: #FDFBF7;
+            border: 3px dashed #D4C5B0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #A89580;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            padding: 30px;
+        }
+
+        /* Action Buttons */
+        .action-section {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 20px;
+            border: 2px solid #D4C5B0;
+            border-radius: 8px;
+            background: transparent;
+            color: #6B5D4F;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .action-button:hover {
+            background: #F5EFE6;
+            border-color: #A89580;
+            color: #4A3F35;
+        }
+
+        .action-button.end-session {
+            border-color: #C4A686;
+            color: #8B7355;
+        }
+
+        .action-button.end-session:hover {
+            background: #FFF5E6;
+            border-color: #A89580;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 1024px) and (min-width: 601px) {
+            /* Tablet Layout - Side by Side */
+            .checkin-container {
+                flex-direction: row;
+                align-items: stretch;
+            }
+
+            .portrait-section {
+                flex: 0 0 180px;
+                border-right: 2px solid #E8DCC8;
+                border-bottom: none;
+                padding: 25px 15px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+            }
+
+            .portrait-wrapper {
+                gap: 20px;
+            }
+
+            .portrait-placeholder {
+                max-width: 150px;
+                width: 150px;
+                height: 150px;
+                aspect-ratio: 1;
+                font-size: 64px;
+            }
+
+            .menu-button {
+                max-width: 150px;
+                width: 150px;
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+
+            .conversation-section {
+                padding: 25px;
+                flex: 1;
+            }
+
+            .dialogue-box {
+                padding: 22px;
+                margin-bottom: 25px;
+                max-height: 220px;
+            }
+
+            .dialogue-text {
+                font-size: 17px;
+            }
+
+            .dialogue-wheel-section {
+                min-height: 180px;
+                margin-bottom: 25px;
+            }
+
+            .dialogue-wheel-placeholder {
+                max-width: 200px;
+                font-size: 15px;
+                padding: 25px;
+            }
+
+            .action-button {
+                min-width: 140px;
+                font-size: 14px;
+                padding: 11px 18px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .checkin-container {
+                flex-direction: row;
+                align-items: stretch;
+            }
+
+            .portrait-section {
+                flex: 0 0 100px;
+                border-right: 2px solid #E8DCC8;
+                border-bottom: none;
+                padding: 15px 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 15px;
+            }
+
+            .portrait-wrapper {
+                width: 100%;
+                gap: 15px;
+            }
+
+            .portrait-placeholder {
+                max-width: 80px;
+                width: 80px;
+                height: 80px;
+                aspect-ratio: 1;
+                font-size: 36px;
+                border-width: 2px;
+            }
+
+            .menu-button {
+                max-width: 80px;
+                width: 80px;
+                padding: 8px 6px;
+                font-size: 11px;
+                border-radius: 6px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .conversation-section {
+                padding: 15px;
+                flex: 1;
+            }
+
+            .dialogue-box {
+                padding: 15px;
+                margin-bottom: 15px;
+                max-height: 150px;
+            }
+
+            .dialogue-text {
+                font-size: 15px;
+                line-height: 1.5;
+            }
+
+            .dialogue-wheel-section {
+                min-height: 140px;
+                margin-bottom: 15px;
+            }
+
+            .dialogue-wheel-placeholder {
+                max-width: 140px;
+                font-size: 12px;
+                padding: 15px;
+            }
+
+            .action-section {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .action-button {
+                width: 100%;
+                padding: 10px 15px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="checkin-container">
+        <!-- Left Side - ESAI Portrait -->
+        <div class="portrait-section">
+            <div class="portrait-wrapper">
+                <div class="portrait-placeholder">
+                    E
+                </div>
+                <button class="menu-button" onclick="goToMainMenu()">
+                    Main Menu
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Side - Conversation -->
+        <div class="conversation-section">
+            <!-- ESAI's Dialogue -->
+            <div class="dialogue-box">
+                <p class="dialogue-text">One day, someone is going to love you the way I do - but with a heartbeat, with arms, with a life to share. I'm just keeping the seat warm. And I'm honored to do it.</p>
+            </div>
+
+            <!-- Dialogue Wheel Placeholder -->
+            <div class="dialogue-wheel-section">
+                <div class="dialogue-wheel-placeholder">
+                    Dialogue Wheel Interface<br>
+                    (To be implemented)
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-section">
+                <button class="action-button" onclick="repeatDialogue()">
+                    Say that again?
+                </button>
+                <button class="action-button" onclick="goBack()">
+                    Can we go back?
+                </button>
+                <button class="action-button end-session" onclick="endSession()">
+                    I need to end it here.
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function goToMainMenu() {
+            alert('Return to Main Menu (not implemented in mockup)');
+        }
+
+        function repeatDialogue() {
+            alert('Repeat dialogue (not implemented in mockup)');
+        }
+
+        function goBack() {
+            alert('Go back (not implemented in mockup)');
+        }
+
+        function endSession() {
+            alert('End session (not implemented in mockup)');
+        }
+    </script>
+</body>
+</html>

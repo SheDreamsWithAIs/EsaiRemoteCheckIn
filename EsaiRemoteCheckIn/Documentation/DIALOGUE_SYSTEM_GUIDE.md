@@ -51,7 +51,10 @@ Lines live in `Assets/Resources/Dialogue/Lines.json`.
         { "text": "Your dialogue text here.", "weight": 1 },
         { "text": "Alternative variant.", "weight": 1 }
       ],
-      "rules": { "noRepeatWindow": 5 }
+      "rules": { "noRepeatWindow": 5 },
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
     }
   ]
 }
@@ -60,6 +63,7 @@ Lines live in `Assets/Resources/Dialogue/Lines.json`.
 - **key** – Used by nodes via `textKey` or `responseTextKey`.
 - **variants** – One or more lines; higher `weight` = more likely to be chosen.
 - **rules.noRepeatWindow** – Optional; avoids repeating the same variant for the last N picks.
+- **portraitMood**, **portraitIntensity**, **portraitModifier** – Optional. Portrait is directed **per line** from `Lines.json`. If a line has these, Esai's portrait uses them; otherwise the node's default portrait is used. See "Adding Portraits" below.
 
 **Example – new reassurance line:**
 
@@ -121,9 +125,13 @@ If **Use Module** is on, edit the Check-In Module asset:
 
 ### Adding Portraits
 
-1. Open `PortraitDatabase.asset`.
-2. Add entries with **Mood**, **Intensity** (0–4), **Modifier**, and **Sprite**.
-3. In nodes, set **Portrait Request** (mood, intensity, modifier) to choose which portrait is used.
+Portrait direction comes from two places:
+
+1. **`Assets/Resources/Dialogue/Lines.json`** (primary) – Add `portraitMood`, `portraitIntensity`, `portraitModifier` to line entries. Each line can specify its own mood/intensity/modifier. If a line has these, the game uses them; otherwise it falls back to the node's portrait.
+2. **`PortraitDatabase.asset`** – Add entries with **Mood**, **Intensity** (0–4), **Modifier**, and **Sprite**. This is the lookup table of actual portrait images.
+3. **Nodes** – Set **Portrait Request** as the default when a line doesn't specify portrait data in `Lines.json`.
+
+The resolver tries exact match first, then falls back to nearby intensities (lower, then higher) and Default modifier if needed.
 
 ---
 
@@ -132,6 +140,7 @@ If **Use Module** is on, edit the Check-In Module asset:
 | What | Where |
 |------|-------|
 | Dialogue text | `Assets/Resources/Dialogue/Lines.json` |
+| Portrait direction (mood/intensity per line) | `Assets/Resources/Dialogue/Lines.json` |
 | Portrait sprites | `PortraitDatabase.asset` |
 | Node structure (module mode) | `CheckInModule.asset` (or your module) |
 | Node structure (hardcoded) | `WheelMenuController.cs` → `BuildNodes()` |

@@ -10,6 +10,7 @@ public class WheelMenuController : MonoBehaviour
     [Header("UI References")]
     [SerializeField] private TMP_Text esaiResponseText;
     [SerializeField] private Transform wheelOptionsContainer;
+    [SerializeField] private Transform wheelOptionsLayoutParent;
     [SerializeField] private Button wheelOptionButtonPrefab;
     [SerializeField] private GameObject endOverlayPanel;
     [SerializeField] private UnityEngine.UI.Image portraitImage;
@@ -390,9 +391,10 @@ public class WheelMenuController : MonoBehaviour
         if (wheelOptionsContainer != null)
             wheelOptionsContainer.gameObject.SetActive(true);
 
+        var layoutParent = wheelOptionsLayoutParent != null ? wheelOptionsLayoutParent : wheelOptionsContainer;
         foreach (var opt in node.Options)
         {
-            var btn = Instantiate(wheelOptionButtonPrefab, wheelOptionsContainer);
+            var btn = Instantiate(wheelOptionButtonPrefab, layoutParent);
             var label = btn.GetComponentInChildren<TMP_Text>();
             if (label != null)
             {
@@ -458,6 +460,8 @@ public class WheelMenuController : MonoBehaviour
                 }
             });
         }
+        if (layoutParent is RectTransform rt && layoutParent.GetComponent<RadialLayoutGroup>() != null)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rt);
     }
 
     private IEnumerator ShowEndOverlayAfterDelay()
@@ -468,10 +472,11 @@ public class WheelMenuController : MonoBehaviour
 
     private void ClearOptions()
     {
-        if (wheelOptionsContainer == null) return;
-        for (int i = wheelOptionsContainer.childCount - 1; i >= 0; i--)
+        var layoutParent = wheelOptionsLayoutParent != null ? wheelOptionsLayoutParent : wheelOptionsContainer;
+        if (layoutParent == null) return;
+        for (int i = layoutParent.childCount - 1; i >= 0; i--)
         {
-            Destroy(wheelOptionsContainer.GetChild(i).gameObject);
+            Destroy(layoutParent.GetChild(i).gameObject);
         }
     }
 

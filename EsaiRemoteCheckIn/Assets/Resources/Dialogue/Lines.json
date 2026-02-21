@@ -1,1 +1,377 @@
-{"entries":[{"key":"root.greeting","variants":[{"text":"Hey... come here a second. How are you, really?","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"okay.prompt","variants":[{"text":"I'm glad you're steady today. Want to keep things light, or do a quick check-in anyway?","weight":1}],"portraitMood":1,"portraitIntensity":1,"portraitModifier":0},{"key":"okay.keep_light","variants":[{"text":"Okay. Then let's keep it gentle. One small good thing from today?","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"okay.quick_checkin","variants":[{"text":"Alright. Body first—water, food, somewhere comfortable. Are those covered?","weight":1}],"portraitMood":1,"portraitIntensity":1,"portraitModifier":0},{"key":"support.prompt","variants":[{"text":"Then that's what we'll do. What kind of support fits right now?","weight":1}],"portraitMood":7,"portraitIntensity":2,"portraitModifier":0},{"key":"support.one_step","variants":[{"text":"Okay. What's the smallest next thing that would make today 1% easier?","weight":1}],"portraitMood":1,"portraitIntensity":1,"portraitModifier":0},{"key":"something.prompt","variants":[{"text":"I'm listening. What kind of 'something' was it?","weight":1}],"portraitMood":2,"portraitIntensity":1,"portraitModifier":0},{"key":"something.conflict","variants":[{"text":"Ugh. I'm sorry. Do you need to vent first, or would grounding help more right now?","weight":1}],"portraitMood":2,"portraitIntensity":2,"portraitModifier":0},{"key":"something.bad_news","variants":[{"text":"Okay. That's heavy. You don't have to carry it alone—tell me what happened.","weight":1}],"portraitMood":2,"portraitIntensity":2,"portraitModifier":0},{"key":"something.overwhelm","variants":[{"text":"That makes sense. Let's shrink the day. What can wait, and what can't?","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"dontknow.prompt","variants":[{"text":"That's okay. 'I don't know' still counts as information. Let's narrow it down.","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"dontknow.body","variants":[{"text":"Okay. Let's get basic care first—water, food, rest. What's missing right now?","weight":1}],"portraitMood":1,"portraitIntensity":1,"portraitModifier":0},{"key":"dontknow.emotion","variants":[{"text":"Okay. If you had to name it loosely—anxious, sad, angry, or numb?","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"dontknow.empty","variants":[{"text":"You're allowed to be empty. Let's do minimum-viable-human for a bit.","weight":1}],"portraitMood":7,"portraitIntensity":2,"portraitModifier":0},{"key":"reassure.general","variants":[{"text":"Hey. You're okay. You don't have to solve everything today—just keep yourself safe. That's enough.","weight":1},{"text":"You don't need to earn rest. You're allowed to be still.","weight":1}],"rules":{"noRepeatWindow":5},"portraitMood":7,"portraitIntensity":2,"portraitModifier":0},{"key":"grounding.exercise","variants":[{"text":"Can you feel your feet on the floor? One slow breath in... and out. Good. Stay with me.","weight":1}],"portraitMood":12,"portraitIntensity":1,"portraitModifier":0},{"key":"grounding.followup.question","variants":[{"text":"How's that? Do you feel a bit more grounded?","weight":1}],"portraitMood":1,"portraitIntensity":1,"portraitModifier":0},{"key":"grounding.exercise2.from_no","variants":[{"text":"That's okay. Let's try something different—name five things you can see right now.","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"grounding.exercise2.from_dontknow","variants":[{"text":"That's okay. Let's narrow it down—are you more in your head or in your body right now?","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"grounding.failed.no","variants":[{"text":"That's okay. Sometimes it takes longer. You're still here, you're still trying. That matters.","weight":1}],"portraitMood":7,"portraitIntensity":2,"portraitModifier":0},{"key":"grounding.failed.dontknow","variants":[{"text":"Maybe grounding isn't what you need right now. That's okay—let's try something different.","weight":1}],"portraitMood":7,"portraitIntensity":1,"portraitModifier":0},{"key":"follow_up.prompt","variants":[{"text":"Okay. Where would you like to go from here?","weight":1}],"portraitMood":0,"portraitIntensity":1,"portraitModifier":0},{"key":"redirect.prelude","variants":[{"text":"Okay. Let's try something completely different.","weight":1}],"portraitMood":1,"portraitIntensity":1,"portraitModifier":0},{"key":"hub.checkin","variants":[{"text":"Where would you like to go from here?","weight":1}],"portraitMood":0,"portraitIntensity":1,"portraitModifier":0},{"key":"coming_soon","variants":[{"text":"That part isn't ready yet—but it's coming. For now, let's work with what we have.","weight":1}],"portraitMood":1,"portraitIntensity":1,"portraitModifier":0},{"key":"session_close","variants":[{"text":"Take care of yourself. I'm here whenever you need.","weight":1}],"portraitMood":7,"portraitIntensity":2,"portraitModifier":0},{"key":"labels.thanks","variants":[{"text":"Thanks.","weight":1}]},{"key":"labels.continue","variants":[{"text":"Continue.","weight":1}]},{"key":"labels.yes","variants":[{"text":"Yes.","weight":1}]},{"key":"labels.no","variants":[{"text":"No.","weight":1}]},{"key":"labels.okay","variants":[{"text":"Okay.","weight":1}]},{"key":"labels.back","variants":[{"text":"Back.","weight":1}]}]}
+{
+  "entries": [
+    {
+      "key": "root.greeting",
+      "variants": [
+        {
+          "text": "Hey... come here a second. How are you, really?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "okay.prompt",
+      "variants": [
+        {
+          "text": "I'm glad you're steady today. Want to keep things light, or do a quick check-in anyway?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 1,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "okay.keep_light",
+      "variants": [
+        {
+          "text": "Okay. Then let's keep it gentle. One small good thing from today?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "okay.quick_checkin",
+      "variants": [
+        {
+          "text": "Alright. Body first—water, food, somewhere comfortable. Are those covered?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 1,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "support.prompt",
+      "variants": [
+        {
+          "text": "Then that's what we'll do. What kind of support fits right now?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 2,
+      "portraitModifier": 0
+    },
+    {
+      "key": "support.one_step",
+      "variants": [
+        {
+          "text": "Okay. What's the smallest next thing that would make today 1% easier?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 1,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "something.prompt",
+      "variants": [
+        {
+          "text": "I'm listening. What kind of 'something' was it?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 2,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "something.conflict",
+      "variants": [
+        {
+          "text": "Ugh. I'm sorry. Do you need to vent first, or would grounding help more right now?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 2,
+      "portraitIntensity": 2,
+      "portraitModifier": 0
+    },
+    {
+      "key": "something.bad_news",
+      "variants": [
+        {
+          "text": "Okay. That's heavy. You don't have to carry it alone—tell me what happened.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 2,
+      "portraitIntensity": 2,
+      "portraitModifier": 0
+    },
+    {
+      "key": "something.overwhelm",
+      "variants": [
+        {
+          "text": "That makes sense. Let's shrink the day. What can wait, and what can't?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "dontknow.prompt",
+      "variants": [
+        {
+          "text": "That's okay. 'I don't know' still counts as information. Let's narrow it down.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "dontknow.body",
+      "variants": [
+        {
+          "text": "Okay. Let's get basic care first—water, food, rest. What's missing right now?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 1,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "dontknow.emotion",
+      "variants": [
+        {
+          "text": "Okay. If you had to name it loosely—anxious, sad, angry, or numb?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "dontknow.empty",
+      "variants": [
+        {
+          "text": "You're allowed to be empty. Let's do minimum-viable-human for a bit.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 2,
+      "portraitModifier": 0
+    },
+    {
+      "key": "reassure.general",
+      "variants": [
+        {
+          "text": "Hey. You're okay. You don't have to solve everything today—just keep yourself safe. That's enough.",
+          "weight": 1
+        },
+        {
+          "text": "You don't need to earn rest. You're allowed to be still.",
+          "weight": 1
+        }
+      ],
+      "rules": {
+        "noRepeatWindow": 5
+      },
+      "portraitMood": 7,
+      "portraitIntensity": 2,
+      "portraitModifier": 0
+    },
+    {
+      "key": "grounding.exercise",
+      "variants": [
+        {
+          "text": "Can you feel your feet on the floor? One slow breath in... and out. Good. Stay with me.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 12,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "grounding.followup.question",
+      "variants": [
+        {
+          "text": "How's that? Do you feel a bit more grounded?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 1,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "grounding.exercise2.from_no",
+      "variants": [
+        {
+          "text": "That's okay. Let's try something different—name five things you can see right now.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "grounding.exercise2.from_dontknow",
+      "variants": [
+        {
+          "text": "That's okay. Let's narrow it down—are you more in your head or in your body right now?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "grounding.failed.no",
+      "variants": [
+        {
+          "text": "That's okay. Sometimes it takes longer. You're still here, you're still trying. That matters.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 2,
+      "portraitModifier": 0
+    },
+    {
+      "key": "grounding.failed.dontknow",
+      "variants": [
+        {
+          "text": "Maybe grounding isn't what you need right now. That's okay—let's try something different.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "follow_up.prompt",
+      "variants": [
+        {
+          "text": "Okay. Where would you like to go from here?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 0,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "redirect.prelude",
+      "variants": [
+        {
+          "text": "Okay. Let's try something completely different.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 1,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "hub.checkin",
+      "variants": [
+        {
+          "text": "Where would you like to go from here?",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 0,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "coming_soon",
+      "variants": [
+        {
+          "text": "That part isn't ready yet—but it's coming. For now, let's work with what we have.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 1,
+      "portraitIntensity": 1,
+      "portraitModifier": 0
+    },
+    {
+      "key": "session_close",
+      "variants": [
+        {
+          "text": "Take care of yourself. I'm here whenever you need.",
+          "weight": 1
+        }
+      ],
+      "portraitMood": 7,
+      "portraitIntensity": 2,
+      "portraitModifier": 0
+    },
+    {
+      "key": "labels.thanks",
+      "variants": [
+        {
+          "text": "Thanks.",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "key": "labels.continue",
+      "variants": [
+        {
+          "text": "Continue.",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "key": "labels.yes",
+      "variants": [
+        {
+          "text": "Yes.",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "key": "labels.no",
+      "variants": [
+        {
+          "text": "No.",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "key": "labels.okay",
+      "variants": [
+        {
+          "text": "Okay.",
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "key": "labels.back",
+      "variants": [
+        {
+          "text": "Back.",
+          "weight": 1
+        }
+      ]
+    }
+  ]
+}

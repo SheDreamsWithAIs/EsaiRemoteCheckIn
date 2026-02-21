@@ -531,7 +531,7 @@ public static class CreateCheckInModule
                 textKey = "grounding.followup.question",
                 options = new[]
                 {
-                    new OptionDef { labelText = "Yes.", next = "hub_checkin",        labelKey = "labels.yes" },
+                    new OptionDef { labelText = "Yes.", next = "grounding_success_response", labelKey = "labels.yes" },
                     new OptionDef { labelText = "No.",  next = "grounding_exercise_2", entryContext = "from_no", labelKey = "labels.no" },
                     new OptionDef { labelText = "I don't know.", next = "grounding_exercise_2", entryContext = "from_dontknow" }
                 }
@@ -552,7 +552,7 @@ public static class CreateCheckInModule
                 textKey = "grounding.followup.question",
                 options = new[]
                 {
-                    new OptionDef { labelText = "Yes.", next = "hub_checkin",                   labelKey = "labels.yes" },
+                    new OptionDef { labelText = "Yes.", next = "grounding_success_response",    labelKey = "labels.yes" },
                     new OptionDef { labelText = "No.",  next = "grounding_failed_response_no",  labelKey = "labels.no" },
                     new OptionDef { labelText = "I don't know.", next = "grounding_failed_response_dontknow" }
                 }
@@ -580,6 +580,15 @@ public static class CreateCheckInModule
                 nodeId  = "redirect_prelude",
                 textKey = "redirect.prelude",
                 options = new[] { new OptionDef { labelText = "Okay.", next = "hub_redirect", labelKey = "labels.okay" } }
+            },
+            // Grounding success — acknowledgment beat before the hub.
+            // TapToContinue so the player has a moment to absorb it.
+            new NodeDef
+            {
+                nodeId            = "grounding_success_response",
+                advanceMode       = AdvanceModeDef.TapToContinue,
+                tapContinueNodeId = "hub_checkin",
+                textKey           = "grounding.success.response"
             },
             new NodeDef
             {
@@ -622,12 +631,14 @@ public static class CreateCheckInModule
                 textKey = "coming_soon",
                 options = new[] { new OptionDef { labelText = "Back.", next = "hub_checkin", labelKey = "labels.back" } }
             },
+            // session_close — uses SpecialNext.End so EndSession() fires explicitly on click.
+            // Avoids relying on triggersEndOverlay serialized in the module asset, which can
+            // silently default to false in stale .asset files.
             new NodeDef
             {
-                nodeId            = "session_close",
-                textKey           = "session_close",
-                triggersEndOverlay = true,
-                options           = null
+                nodeId  = "session_close",
+                textKey = "session_close",
+                options = new[] { new OptionDef { labelText = "Okay.", specialNext = SpecialNext.End, labelKey = "labels.okay" } }
             }
         };
 

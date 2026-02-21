@@ -236,6 +236,15 @@
       "portraitModifier": 0
     },
     {
+      "key": "grounding.success.response",
+      "variants": [
+        { "text": "Good. I'm glad. Hold onto that.", "weight": 1 },
+        { "text": "That's something. You just helped yourself.", "weight": 1 }
+      ],
+      "rules": { "noRepeatWindow": 2 },
+      "portraitMood": 7, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
       "key": "grounding.failed.no",
       "variants": [
         {

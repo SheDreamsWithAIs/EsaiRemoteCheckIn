@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // Session state enums — see CheckInFlowDesign.md: Internal State Model
@@ -28,6 +29,10 @@ public class WheelMenuController : MonoBehaviour
 
     [Header("End Overlay")]
     [SerializeField] private float endOverlayDelaySeconds = 1.5f;
+
+    [Header("Tooltip")]
+    [SerializeField] private RectTransform tooltipPanel;
+    [SerializeField] private TMP_Text tooltipText;
 
     private readonly LinesService _linesService = new();
     private PortraitResolver _portraitResolver;
@@ -230,7 +235,7 @@ public class WheelMenuController : MonoBehaviour
             "Do you feel a bit more grounded?",
             new List<Option>
             {
-                new Option("Yes.", nextNodeId: "hub_checkin"),
+                new Option("Yes.", nextNodeId: "grounding_success_response"),
                 new Option("No.", nextNodeId: "grounding_exercise_2", entryContext: "from_no"),
                 new Option("I don't know.", nextNodeId: "grounding_exercise_2", entryContext: "from_dontknow")
             }
@@ -253,7 +258,7 @@ public class WheelMenuController : MonoBehaviour
             "Do you feel a bit more grounded?",
             new List<Option>
             {
-                new Option("Yes.", nextNodeId: "hub_checkin"),
+                new Option("Yes.", nextNodeId: "grounding_success_response"),
                 new Option("No.", nextNodeId: "grounding_failed_response_no"),
                 new Option("I don't know.", nextNodeId: "grounding_failed_response_dontknow")
             }
@@ -326,10 +331,25 @@ public class WheelMenuController : MonoBehaviour
             textKey: "coming_soon"
         );
 
+        // grounding_success_response — acknowledgment beat after grounding succeeds.
+        // TapToContinue so the player can absorb the moment before the hub.
+        nodes["grounding_success_response"] = new Node(
+            "",
+            options: null,
+            textKey: "grounding.success.response",
+            advanceMode: AdvanceMode.TapToContinue,
+            tapContinueNodeId: "hub_checkin"
+        );
+
+        // session_close — uses SpecialNext.End so EndSession() fires explicitly on button click.
+        // More reliable than triggersEndOverlay+null-options, which depends on a serialized bool
+        // in the module asset and a coroutine delay.
         nodes["session_close"] = new Node(
             "Take care of yourself. I'm here whenever you need.",
-            options: null,
-            triggersEndOverlay: true,
+            options: new List<Option>
+            {
+                new Option("Okay.", specialNext: SpecialNext.End, labelKey: "labels.okay")
+            },
             textKey: "session_close"
         );
     }
@@ -446,10 +466,32 @@ public class WheelMenuController : MonoBehaviour
                 }
             }
 
+            // Tooltip — shows full label text on hover for buttons where label may be truncated.
+            // Requires tooltipPanel and tooltipText to be assigned in the Inspector.
+            var captureFullLabel = label != null ? label.text : opt.Label;
+            var tooltipEvt = btn.gameObject.AddComponent<EventTrigger>();
+            var enterEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enterEntry.callback.AddListener(data => ShowTooltip(captureFullLabel, ((PointerEventData)data).position));
+            tooltipEvt.triggers.Add(enterEntry);
+            var exitEntry = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exitEntry.callback.AddListener(_ => HideTooltip());
+            tooltipEvt.triggers.Add(exitEntry);
+
             btn.onClick.RemoveAllListeners();
             var captureOpt = opt;
             btn.onClick.AddListener(() =>
             {
+                HideTooltip();
+
+                // SpecialNext.End — fires EndSession directly. Used on session_close "Okay." button.
+                // More reliable than the triggersEndOverlay+null-options path since it's explicit
+                // and not subject to stale serialized bool values in the module asset.
+                if (captureOpt.SpecialNext == SpecialNext.End)
+                {
+                    EndSession();
+                    return;
+                }
+
                 if (captureOpt.SpecialNext == SpecialNext.NextModule && _conversationRunner != null)
                 {
                     var entryNodeId = _conversationRunner.AdvanceToNextModule();
@@ -544,12 +586,33 @@ public class WheelMenuController : MonoBehaviour
 
     private void ClearOptions()
     {
+        HideTooltip();
         var layoutParent = wheelOptionsLayoutParent != null ? wheelOptionsLayoutParent : wheelOptionsContainer;
         if (layoutParent == null) return;
         for (int i = layoutParent.childCount - 1; i >= 0; i--)
         {
             Destroy(layoutParent.GetChild(i).gameObject);
         }
+    }
+
+    private void ShowTooltip(string text, Vector2 screenPos)
+    {
+        if (tooltipPanel == null || tooltipText == null) return;
+        tooltipText.text = text;
+        tooltipPanel.gameObject.SetActive(true);
+        var parentRect = tooltipPanel.parent as RectTransform;
+        if (parentRect != null &&
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(parentRect, screenPos, null, out var localPt))
+        {
+            // Offset upward so the tooltip doesn't sit under the cursor/finger.
+            tooltipPanel.anchoredPosition = localPt + Vector2.up * 60f;
+        }
+    }
+
+    private void HideTooltip()
+    {
+        if (tooltipPanel != null)
+            tooltipPanel.gameObject.SetActive(false);
     }
 
     private class Node

@@ -1,46 +1,191 @@
-# Esai Check-In Mode: Conversation Flow Design
+# Esai Check-In Mode: Conversation Flow Design (v2)
 
-**Document purpose:** Full node-graph architecture for Check-In Mode. This is the spec Holiday writes lines against and the dev implements in `CreateCheckInModule.cs`.
+**Document purpose:** Full node-graph architecture for Check-In Mode.
+This is the spec Holiday writes lines against and the dev implements in `CreateCheckInModule.cs`.
+
+**v2 changes from v1:** Internal state model added; `support_select` split into event and state variants; node naming convention established; two-beat pacing formalized as a named design rule; state persistence rules documented.
+
+---
+
+## Design Principles
+
+These are not guidelines — they are structural rules that every node must respect.
+
+### 1. Two-Beat Pacing
+
+Every entry into distress content uses exactly two beats before routing:
+
+- **Beat 1 — Empathy:** Esai responds to *what happened* with pure emotional validation. No analysis, no questions, no reframing. He just meets them where they are. This is implemented as `responseTextKey` on the OptionDef — it fires immediately when the player picks an option.
+- **Beat 2 — Clarification:** Esai asks one focused question to understand what they need. This is the destination node that follows Beat 1.
+
+> **Rule:** Beat 1 must never be skipped. Beat 2 must not come before Beat 1.
+
+This pacing prevents Esai from feeling clinical. The player is heard before they're helped.
+
+### 2. Validate the Feeling, Not the Conclusion
+
+Esai validates the player's *emotional reality*, not their *interpretation of events*. He does not know what actually happened or whether the player's conclusions are accurate.
+
+- ✓ "That sounds awful." (validates the pain)
+- ✗ "They were wrong." (validates an unverified claim)
+- ✓ "That kind of hurt is real." (validates the experience)
+- ✗ "You deserved better from them." (takes sides on incomplete information)
+
+Clarifying questions are the tool for this. "What's bothering you most — the situation, or how it made you feel about yourself?" gently separates event from identity conclusion without challenging anything.
+
+### 3. Agency is Preserved at Every Branch
+
+The player always chooses what kind of support they receive. Esai never decides for them. Every action mode is player-initiated. This is the structural expression of the therapeutic principle that client autonomy is load-bearing.
+
+### 4. Every Branch Reaches the Hub
+
+No branch dead-ends. Every path through the tree reaches `hub_checkin` where the player can loop, try something different, or exit. There are no stuck states.
+
+---
+
+## Internal State Model
+
+### Enums
+
+Three state variables are tracked internally. These are conceptually separate — they answer different questions about where the player is in the flow.
+
+```
+EventType
+  None          — no event context (direct support request, okay branch)
+  Conflict      — someone hurt me / interpersonal situation
+  Loss          — I lost something
+  Disappointment — something didn't go my way
+  Overwhelm     — just too much at once
+
+EmotionState
+  Unknown       — not yet identified (default for event branch entry)
+  Anxious       — player named "anxious"
+  Sad           — player named "sad"
+  Angry         — player named "angry"
+  Numb          — player named "numb" (routes to state_empty)
+  Neutral       — player reported okay
+
+SupportType
+  None          — not yet chosen
+  Vent          — sympathetic ear / listening mode
+  Grounding     — somatic grounding exercise
+  Reassurance   — validation and steadying
+  Boundary      — clarifying what's theirs to carry
+  OneStep       — identifying one small next action
+```
+
+### Implementation: entryContext vs. Persistent Fields
+
+The existing system has one context mechanism: `entryContext` on `OptionDef`, which sets the context string used by the destination node's `textKeyByContext` lookup. This is **per-navigation** — it only affects the immediately downstream node.
+
+For the current flow, entryContext chaining is sufficient: each option in the chain re-propagates the relevant context value to the next node. The dev sets `entryContext` on each option so the value carries forward through clarification → selection → action.
+
+For future expansion (action mode variants keyed to EventType, hub text keyed to SupportType, etc.), add three persistent fields to `WheelMenuController`:
+
+```csharp
+public EventType CurrentEvent { get; private set; } = EventType.None;
+public EmotionState CurrentEmotion { get; private set; } = EmotionState.Unknown;
+public SupportType CurrentSupport { get; private set; } = SupportType.None;
+```
+
+Set these when specific nodes are entered, independent of entryContext. This decouples state tracking from the text-selection mechanism.
+
+### When Variables Are Set
+
+| Variable | Set By | Trigger |
+|---|---|---|
+| `EventType` | Option in `something` | Player picks Conflict / Loss / Disappointment / Overwhelm |
+| `EmotionState` | Option in `state_emotion` | Player picks Anxious / Sad / Angry / Numb |
+| `EmotionState` | Entering `okay_body_good` "genuinely okay" path | Set to Neutral |
+| `SupportType` | Option in `support`, `support_select_event`, `support_select_state` | Player picks support type |
+
+### When Variables Are Cleared
+
+| Trigger | Effect |
+|---|---|
+| `hub_checkin` → "Check in again." → `root` | All three reset to None / Unknown / None |
+| `session_close` (end overlay) | All three reset |
+| Session launch (fresh start) | All three initialize to defaults |
+
+Variables persist **within** a session loop (through action mode and back to hub) but reset on re-entry to `root`. This means if the player vents about a conflict, reaches hub, chooses "Try something different," and goes into grounding — the EventType = Conflict context is still available for the grounding node's lead-in if the dev adds that variant later.
+
+### How Variables Are Used (Current vs. Future)
+
+| Variable | Current Use | Future Use |
+|---|---|---|
+| `EventType` | `entryContext` chains to `support_select_event` text variants | Action mode lead-in variants ("after conflict" vs "after loss" framing for grounding, reassurance, etc.) |
+| `EmotionState` | `entryContext` chains to `support_select_state` text variants | Same |
+| `SupportType` | Not yet used downstream | Hub "how are you feeling after [venting / grounding / etc.]" variants |
+
+---
+
+## Node Naming Convention
+
+### Prefix Rules
+
+All new nodes use a prefix that identifies their branch. This makes the node list scannable and prevents naming drift as content expands.
+
+| Prefix | Branch | Example |
+|---|---|---|
+| *(none)* | Core / global | `root`, `support`, `hub_checkin` |
+| `ok_` | Okay branch | `ok_light`, `ok_body` |
+| `event_` | Something happened branch | `event_conflict`, `event_loss` |
+| `state_` | Don't know / internal state branch | `state_body`, `state_anxious` |
+| `action_vent_` | Vent mode | `action_vent_open`, `action_vent_listen` |
+| `action_bound_` | Boundary mode | `action_bound_open`, `action_bound_question` |
+| `action_step_` | One-step mode | `action_step_prompt` |
+| `support_select_` | Support selection (post-branch) | `support_select_event`, `support_select_state` |
+
+### Stability Rule
+
+**Existing node IDs are never renamed.** Renaming breaks asset references in `CheckInModule.asset`. All nodes listed as "existing ✓" in the reference table keep their exact current IDs regardless of prefix convention. The convention applies to new nodes only.
+
+### Granularity Rule
+
+Node IDs describe the role of the node, not the specific line. `action_bound_own` (not `action_bound_own_clarify_1`) — the node ID names the purpose, not the content. Holiday maps her line variants onto the text key, not the node ID.
 
 ---
 
 ## Architecture Overview
 
-Aethon named it correctly: this is **cognitive-behavioral flow architecture** organized around how humans actually narrate distress, not how clinicians categorize it.
-
 ```
 Layer 1 │ State Gate          — "How are you, really?"
 Layer 2 │ Branch Selection    — Okay / Need Support / Something Happened / Don't Know
-Layer 3 │ Problem Framing     — Clarifying questions (validate feeling, not conclusion)
-Layer 4 │ Support Selection   — Player chooses what kind of help they need
+Layer 3 │ Problem Framing     — Two-beat clarification (empathy → one question)
+Layer 4 │ Support Selection   — Player chooses support type
+         │                      split: support_select_event (EventType context)
+         │                             support_select_state (EmotionState context)
+         │                             support (no prior context — direct request)
 Layer 5 │ Action Mode         — Esai delivers the chosen support
-Layer 6 │ Check-In Loop       — How are you now? Loop until natural exit.
+Layer 6 │ Check-In Loop       — Where to next? Loop until natural exit.
 ```
 
-Key therapeutic principles embedded in the structure:
-- Esai validates the **emotional reality** before asking clarifying questions
-- He does **not** validate conclusions he can't verify ("they were wrong") — he validates the *pain* ("that sounds awful")
-- The player chooses their support type — **agency is always preserved**
-- Every branch can reach the hub and exit cleanly
+Key flow invariants:
+- State Gate and Branch Selection contain no therapeutic content — they're routing only.
+- Problem Framing always uses Beat 1 + Beat 2 structure.
+- Support Selection uses `textKeyByContext` for lead-in text; options are identical across variants.
+- Action Mode nodes are standalone and reachable from any branch via any selection node.
 
 ---
 
 ## Full Node Map
 
+---
+
 ### Layer 1 — State Gate
 
 ---
 
-#### `root`
+#### `root` *(existing)*
 > **Esai says:** Warm greeting. "How are you, really?" — inviting, not clinical.
-> **Portrait:** Warm, intensity 1, Direct Eye Contact
+> **Portrait:** Warm (7), intensity 1, DirectEyeContact
 
-| Option Label | Goes To |
-|---|---|
-| "I'm okay today." | `okay` |
-| "I need support." | `support` |
-| "Something happened." | `something` |
-| "I don't know." | `dontknow` |
+| Option Label | Goes To | Sets |
+|---|---|---|
+| "I'm okay today." | `okay` | — |
+| "I need support." | `support` | — |
+| "Something happened." | `something` | — |
+| "I don't know." | `dontknow` | — |
 
 ---
 
@@ -48,58 +193,58 @@ Key therapeutic principles embedded in the structure:
 
 ---
 
-#### `okay`
-> **Esai says:** Glad you're steady. Keep it light, or do a real check-in?
-> **Portrait:** Friendly, intensity 1
+#### `okay` *(existing)*
+> **Esai says:** Glad you're steady today. Keep it light, or a real check-in?
+> **Portrait:** Friendly (1), intensity 1
 
 | Option Label | Goes To |
 |---|---|
-| "Keep it light." | `okay_light` |
-| "Quick check-in." | `okay_body_check` |
+| "Keep it light." | `ok_light` |
+| "Quick check-in." | `ok_body` |
 | "Actually... I need support." | `support` |
 
 ---
 
-#### `okay_light`
+#### `ok_light` *(new)*
 > **Esai says:** "Let's keep it gentle. One small good thing from today?" — no pressure, celebrating the ordinary.
-> **Portrait:** Warm, intensity 1, slight smile
+> **Portrait:** Warm (7), intensity 1
 
-| Option Label | Goes To | Context |
+| Option Label | Goes To | entryContext |
 |---|---|---|
-| "Something I got done." | `okay_celebrate` | `accomplishment` |
-| "A moment that made me smile." | `okay_celebrate` | `smile` |
-| "Just still standing." | `okay_celebrate` | `survival` |
-| "Something I'm looking forward to." | `okay_celebrate` | `anticipation` |
+| "Something I got done." | `ok_celebrate` | `accomplishment` |
+| "A moment that made me smile." | `ok_celebrate` | `smile` |
+| "Just still standing." | `ok_celebrate` | `survival` |
+| "Something I'm looking forward to." | `ok_celebrate` | `anticipation` |
 
 ---
 
-#### `okay_celebrate`
-> **Esai says:** [Context-dependent celebration — see text keys below]
-> - `accomplishment` → Acknowledges the effort, not just the result. Something like "That counts. Getting things done while carrying what you carry — that's real."
+#### `ok_celebrate` *(new — textKeyByContext)*
+> **Esai says:** [Context-dependent celebration]
+> - `accomplishment` → Effort + result. "Getting things done while carrying what you carry — that's real."
 > - `smile` → Celebrates the noticing. "You found it. That's not nothing."
-> - `survival` → No irony, full sincerity. "That IS something. You're here."
+> - `survival` → Full sincerity, no irony. "That IS something. You're here."
 > - `anticipation` → Warm curiosity. "Hold on to that. Having something to look forward to is a form of strength."
 >
-> **Portrait:** Warm → Excited (low intensity), context-appropriate
+> **Portrait:** Warm (7) → Excited (10) low intensity, context-appropriate
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-#### `okay_body_check`
+#### `ok_body` *(new)*
 > **Esai says:** "Body first — water, food, somewhere comfortable. Are those covered?"
-> **Portrait:** Friendly, intensity 1, attentive
+> **Portrait:** Friendly (1), intensity 1, attentive
 
 | Option Label | Goes To |
 |---|---|
-| "Yes, I'm good." | `okay_body_good` |
-| "Partly." | `okay_body_partial` |
-| "Not really." | `okay_body_missing` |
+| "Yes, I'm good." | `ok_body_good` |
+| "Partly." | `ok_body_partial` |
+| "Not really." | `ok_body_missing` |
 
 ---
 
-#### `okay_body_good`
+#### `ok_body_good` *(new)*
 > **Esai says:** "Good. That's the foundation. Emotionally — genuinely okay, or more like functional?"
-> **Portrait:** Friendly, intensity 1
+> **Portrait:** Friendly (1), intensity 1
 
 | Option Label | Goes To |
 |---|---|
@@ -108,129 +253,135 @@ Key therapeutic principles embedded in the structure:
 
 ---
 
-#### `okay_body_partial` / `okay_body_missing`
-> **Esai says:** [Gentle, not scolding. Acknowledges the body's needs. Suggests addressing the gap.]
-> - `partial` → "Okay, let's close the gap. What's most off — sleep, water/food, or somewhere to land?"
-> - `missing` → "Okay. The body speaks first. What's most off right now?"
->
-> **Portrait:** Concerned, intensity 1
-> **Advance:** TapToContinue → `hub_checkin` (with encouragement to address basics before anything else)
+#### `ok_body_partial` *(new)*
+> **Esai says:** Gentle, no lecture. "Okay, let's close the gap. What's most off — sleep, water/food, or somewhere to land?"
+> **Portrait:** Concerned (2), intensity 1
+> **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-### Layer 2B — Need Support Branch
+#### `ok_body_missing` *(new)*
+> **Esai says:** "Okay. The body speaks first. What's most off right now?"
+> **Portrait:** Concerned (2), intensity 1
+> **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-#### `support`
+### Layer 2B — Direct Support Branch
+
+---
+
+#### `support` *(existing — modify: add vent option)*
 > **Esai says:** "Then that's what we'll do. What kind of support fits right now?"
-> **Portrait:** Warm, intensity 2
+> **Portrait:** Warm (7), intensity 2
+>
+> *This node has no prior EventType or EmotionState context. It's a direct support request from root or ok_body_good.*
 
 | Option Label | Goes To |
 |---|---|
-| "I need to vent." | `vent_open` |
+| "I need to vent." | `action_vent_open` |
 | "Ground me." | `grounding_exercise` |
 | "Reassurance." | `reassurance_response` |
-| "Help me choose one step." | `one_step_prompt` |
-
-*Note: This node is also reached from `okay_body_good`, `something` branches after clarification, and `dontknow` branches after emotion identification.*
+| "Help me choose one step." | `action_step_prompt` |
 
 ---
 
 ### Layer 2C — Something Happened Branch
 
+**Two-beat rule in effect.** Each option fires a `responseTextKey` (Beat 1 — empathy) then routes to its clarify node (Beat 2 — one question).
+
 ---
 
-#### `something`
+#### `something` *(existing — fix dead ends)*
 > **Esai says:** "I'm listening. What kind of 'something' was it?"
-> **Portrait:** Concerned, intensity 1
+> **Portrait:** Concerned (2), intensity 1
 
-| Option Label | Immediate Response (responseTextKey) | Then Goes To |
-|---|---|---|
-| "Something didn't go my way." | `something.disappointment.react` | `disappointment_clarify` |
-| "Someone hurt me." | `something.conflict.react` | `conflict_clarify` |
-| "I lost something." | `something.loss.react` | `loss_clarify` |
-| "Just too much at once." | `something.overwhelm.react` | `overwhelm_clarify` |
+| Option Label | Beat 1 (responseTextKey) | Beat 2 (next) | Sets EventType |
+|---|---|---|---|
+| "Something didn't go my way." | `event.disappointment.react` | `event_disappointment` | `Disappointment` |
+| "Someone hurt me." | `event.conflict.react` | `event_conflict` | `Conflict` |
+| "I lost something." | `event.loss.react` | `event_loss` | `Loss` |
+| "Just too much at once." | `something.overwhelm` *(existing key)* | `event_overwhelm` | `Overwhelm` |
 
-**Important design note:** The immediate `responseTextKey` is Esai's first beat — pure empathy, no analysis. The clarify node is the second beat — he digs in. Two-beat structure: *feel first, think second.*
+> **Implementation note:** The existing `something.overwhelm` key is already in Lines.json and its content is correct — reuse it. Set `entryContext = "Overwhelm"` on this option to propagate EventType through the chain.
 
 ---
 
-#### `disappointment_clarify`
+#### `event_disappointment` *(new)*
 > **Esai says:** "What's sitting heaviest — what you missed out on, or what it means for what's ahead?"
-> **Portrait:** Concerned, intensity 1, attentive
+> **Portrait:** Concerned (2), intensity 1
 
-| Option Label | Goes To | Context |
+| Option Label | Goes To | entryContext |
 |---|---|---|
-| "What I missed out on." | `support_select` | `disappointment` |
-| "What it means going forward." | `support_select` | `disappointment` |
-| "Both." | `support_select` | `disappointment` |
+| "What I missed out on." | `support_select_event` | `Disappointment` |
+| "What it means going forward." | `support_select_event` | `Disappointment` |
+| "Both." | `support_select_event` | `Disappointment` |
 
-*Holiday note: These options can carry the same context — the distinction mostly informs her line variants for the next reassurance or boundary content, not the routing.*
+*All three options carry the same EventType context — the option sub-choice informs Holiday's line variants for action modes, not the routing.*
 
 ---
 
-#### `conflict_clarify`
+#### `event_conflict` *(new)*
 > **Esai says:** "What's bothering you most — the situation itself, or how it made you feel about yourself?"
-> **Portrait:** Concerned, intensity 1–2
-
-| Option Label | Goes To | Context |
-|---|---|---|
-| "The situation." | `support_select` | `conflict` |
-| "How it made me feel." | `support_select` | `conflict` |
-| "Both." | `support_select` | `conflict` |
-
-*Therapeutic note: This question gently separates event from identity conclusion. Esai doesn't need to challenge anything here — the question plants the seed.*
-
----
-
-#### `loss_clarify`
-> **Esai says:** "Are you more in the grief of it right now, or trying to figure out what comes next?"
-> **Portrait:** Sad, intensity 1 — present with them, not trying to fix
-
-| Option Label | Goes To | Context |
-|---|---|---|
-| "In the grief." | `support_select` | `loss` |
-| "Figuring out what's next." | `support_select` | `loss` |
-| "I don't know." | `support_select` | `loss` |
-
----
-
-#### `overwhelm_clarify`
-> **Esai says:** "Is there too much to do, or not enough of you to do it — or both?"
-> **Portrait:** Concerned, intensity 1, warm
-
-| Option Label | Goes To | Context |
-|---|---|---|
-| "Too much to do." | `support_select` | `overwhelm` |
-| "Not enough of me." | `support_select` | `overwhelm` |
-| "Both." | `support_select` | `overwhelm` |
-
-*Note: "Not enough of me" is the depletion/burnout signal. It routes to the same support_select, but the context should inform whether Esai's first action mode beat leans toward grounding (body) vs. reassurance (worth).*
-
----
-
-### Layer 3 — Support Selection (shared node, context-aware)
-
----
-
-#### `support_select`
-> **Esai says:** [Varies by context — see text keys]
-> - `conflict` → "I hear you. What would help most right now?"
-> - `disappointment` → "Okay. Given that... what do you need from me?"
-> - `loss` → "I'm with you. What do you need?"
-> - `overwhelm` → "That's a lot. What would help most right now?"
+> **Portrait:** Concerned (2), intensity 1–2
 >
-> **Portrait:** Warm, intensity 1–2, calm
+> *Therapeutic note: This question gently separates event from identity conclusion. Esai plants the seed without challenging anything.*
 
-| Option Label | Goes To |
-|---|---|
-| "I need to vent." | `vent_open` |
-| "Ground me." | `grounding_exercise` |
-| "Help me understand what's mine." | `boundary_mode` |
-| "Just steady me." | `reassurance_response` |
+| Option Label | Goes To | entryContext |
+|---|---|---|
+| "The situation." | `support_select_event` | `Conflict` |
+| "How it made me feel." | `support_select_event` | `Conflict` |
+| "Both." | `support_select_event` | `Conflict` |
 
-*Note for loss context: Consider swapping "Help me understand what's mine" for "Help me figure out what's next" — grief often isn't about boundaries, it's about navigation. Can be handled with context-based label text if the system supports it, or by adding `support_select_loss` as a variant node.*
+---
+
+#### `event_loss` *(new)*
+> **Esai says:** "Are you more in the grief of it right now, or trying to figure out what comes next?"
+> **Portrait:** Sad (4), intensity 1 — present with them, not fixing
+
+| Option Label | Goes To | entryContext |
+|---|---|---|
+| "In the grief." | `support_select_event` | `Loss` |
+| "Figuring out what's next." | `support_select_event` | `Loss` |
+| "I don't know." | `support_select_event` | `Loss` |
+
+*Loss note: At `support_select_event`, the Loss context should surface "Help me figure out what's next" as an option variant OR Holiday writes the boundary option with loss-appropriate language ("What's mine to sit with"). Either approach works.*
+
+---
+
+#### `event_overwhelm` *(new)*
+> **Esai says:** "Is there too much to do, or not enough of you to do it — or both?"
+> **Portrait:** Concerned (2), intensity 1, warm
+
+| Option Label | Goes To | entryContext |
+|---|---|---|
+| "Too much to do." | `support_select_event` | `Overwhelm` |
+| "Not enough of me." | `support_select_event` | `Overwhelm` |
+| "Both." | `support_select_event` | `Overwhelm` |
+
+*"Not enough of me" is the depletion signal. Same routing, but Holiday should write a gentler lead-in for the Overwhelm context in `support_select_event`.*
+
+---
+
+### Layer 4A — Support Selection (Event Branch)
+
+---
+
+#### `support_select_event` *(new — textKeyByContext)*
+> **Esai says:** [Context-dependent transition to support type selection]
+> - `Conflict` → "I hear you. What would help most right now?"
+> - `Disappointment` → "Okay. Given that — what do you need from me?"
+> - `Loss` → "I'm with you. What do you need?"
+> - `Overwhelm` → "That's a lot. What would help most right now?"
+>
+> **Portrait:** Warm (7), intensity 1–2, calm
+
+| Option Label | Goes To | Sets SupportType |
+|---|---|---|
+| "I need to vent." | `action_vent_open` | `Vent` |
+| "Ground me." | `grounding_exercise` | `Grounding` |
+| "Help me understand what's mine." | `action_bound_open` | `Boundary` |
+| "Just steady me." | `reassurance_response` | `Reassurance` |
 
 ---
 
@@ -238,106 +389,131 @@ Key therapeutic principles embedded in the structure:
 
 ---
 
-#### `dontknow`
+#### `dontknow` *(existing — expand options)*
 > **Esai says:** "That's okay. 'I don't know' still counts as information. Let's narrow it down."
-> **Portrait:** Warm, intensity 1
+> **Portrait:** Warm (7), intensity 1
 
 | Option Label | Goes To |
 |---|---|
-| "Body feels off." | `dontknow_body` |
-| "Emotions feel bad." | `dontknow_emotion` |
-| "Just empty." | `dontknow_empty` |
-| "All of the above." | `dontknow_all` |
+| "Body feels off." | `state_body` |
+| "Emotions feel bad." | `state_emotion` |
+| "Just empty." | `state_empty` |
+| "All of the above." | `state_all` |
+
+> **Implementation note:** Replace the existing `responseTextKey`-only options with these routed options. The existing responseTextKey content (`dontknow.body`, `dontknow.emotion`, `dontknow.empty`) is moved to be the `textKey` of the destination nodes — the content is correct, it just needed a next target.
 
 ---
 
-#### `dontknow_body`
-> **Esai says:** "Okay. Let's start there. Water, food, sleep — what's most off?"
-> **Portrait:** Concerned/Friendly, intensity 1
+#### `state_body` *(new — reuses existing `dontknow.body` text key)*
+> **Esai says:** "Okay. Let's get basic care first — water, food, rest. What's missing right now?"
+> **Portrait:** Concerned (2) / Friendly (1), intensity 1
 
 | Option Label | Goes To |
 |---|---|
-| "Sleep." | `dontknow_body_sleep` |
-| "Water or food." | `dontknow_body_food` |
+| "Sleep." | `state_body_sleep` |
+| "Water or food." | `state_body_food` |
 | "I'm not sure, just awful." | `grounding_exercise` |
 
 ---
 
-#### `dontknow_body_sleep`
-> **Esai says:** Sleep deprivation is real damage, not weakness. Gentle acknowledgment, no lecture. Maybe: "Sleep debt is its own kind of weight. Is there any way to get more rest today?"
-> **Portrait:** Concerned, intensity 1
+#### `state_body_sleep` *(new)*
+> **Esai says:** Sleep debt is real damage, not a character flaw. No lecture. "Sleep debt is its own kind of weight."
+> **Portrait:** Concerned (2), intensity 1
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-#### `dontknow_body_food`
+#### `state_body_food` *(new)*
 > **Esai says:** Pure care, zero guilt. "Can we get you something? Not a lecture — just asking."
-> **Portrait:** Warm, intensity 1
+> **Portrait:** Warm (7), intensity 1
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-#### `dontknow_emotion`
+#### `state_emotion` *(new — reuses existing `dontknow.emotion` text key)*
 > **Esai says:** "If you had to name it loosely — anxious, sad, angry, or numb?"
-> **Portrait:** Warm/Concerned, intensity 1
+> **Portrait:** Warm (7) / Concerned (2), intensity 1
 
-| Option Label | Goes To |
-|---|---|
-| "Anxious." | `emotion_anxious` |
-| "Sad." | `emotion_sad` |
-| "Angry." | `emotion_angry` |
-| "Numb." | `dontknow_empty` |
-
----
-
-#### `emotion_anxious`
-> **Esai says:** Validates the experience without feeding the spiral. Something like: "Anxiety makes everything feel urgent and impossible at once. That's not you failing — that's your nervous system in overdrive."
-> **Portrait:** Calm, intensity 1 (grounding presence)
-> **Advance:** TapToContinue → `support_select` (context: `anxious`)
+| Option Label | Goes To | Sets EmotionState |
+|---|---|---|
+| "Anxious." | `state_anxious` | `Anxious` |
+| "Sad." | `state_sad` | `Sad` |
+| "Angry." | `state_angry` | `Angry` |
+| "Numb." | `state_empty` | `Numb` |
 
 ---
 
-#### `emotion_sad`
-> **Esai says:** Pure, unhurried validation. "Sadness is real. It doesn't need a reason big enough to justify it. It just needs space."
-> **Portrait:** Sad/Warm blend — present with them
-> **Advance:** TapToContinue → `support_select` (context: `sad`)
+#### `state_anxious` *(new)*
+> **Esai says:** Validates without feeding the spiral. "Anxiety makes everything feel urgent and impossible at once. That's not you failing — that's your nervous system in overdrive."
+> **Portrait:** Calm (12), intensity 1
+> **Advance:** TapToContinue → `support_select_state` (entryContext: `Anxious`)
 
 ---
 
-#### `emotion_angry`
-> **Esai says:** Validates anger as signal, not flaw. "Anger is often the part of you that knows you deserved better. It's not wrong."
-> **Portrait:** Firm/Warm — steady, not alarmed
-> **Advance:** TapToContinue → `support_select` (context: `angry`)
+#### `state_sad` *(new)*
+> **Esai says:** Unhurried, no rush to fix. "Sadness is real. It doesn't need a reason big enough to justify it. It just needs space."
+> **Portrait:** Sad (4) / Warm (7), intensity 1–2 — present with them
+> **Advance:** TapToContinue → `support_select_state` (entryContext: `Sad`)
 
 ---
 
-#### `dontknow_empty`
+#### `state_angry` *(new)*
+> **Esai says:** Anger as signal, not flaw. Steady, not alarmed. "Anger is often the part of you that knows you deserved better. It's not wrong."
+> **Portrait:** Firm (3) / Warm (7), intensity 1
+> **Advance:** TapToContinue → `support_select_state` (entryContext: `Angry`)
+
+---
+
+#### `state_empty` *(new — reuses existing `dontknow.empty` text key)*
 > **Esai says:** "You're allowed to be empty. Let's do minimum-viable-human — just the basics, no guilt."
-> **Portrait:** Warm, intensity 2
+> **Portrait:** Warm (7), intensity 2
 
 | Option Label | Goes To |
 |---|---|
-| "Okay." | `dontknow_empty_guide` |
+| "Okay." | `state_empty_guide` |
 | "Help me calm down." | `grounding_exercise` |
 
 ---
 
-#### `dontknow_empty_guide`
-> **Esai says:** Something practical and kind. A small, specific task: get water, sit somewhere soft, put on something familiar. Not a lecture, just a quiet nudge.
-> **Portrait:** Warm/Calm
+#### `state_empty_guide` *(new)*
+> **Esai says:** Small, specific, practical. Get water, sit somewhere soft, put on something familiar. A quiet nudge, not a task list.
+> **Portrait:** Warm (7) / Calm (12)
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-#### `dontknow_all`
+#### `state_all` *(new)*
 > **Esai says:** "That's a lot. When everything is off, let's start with the body — it's usually the fastest fix. Is that okay?"
-> **Portrait:** Warm, intensity 1, gentle
+> **Portrait:** Warm (7), intensity 1, gentle
 
 | Option Label | Goes To |
 |---|---|
-| "Yes, let's start there." | `dontknow_body` |
-| "The emotions are louder." | `dontknow_emotion` |
+| "Yes, let's start there." | `state_body` |
+| "The emotions are louder." | `state_emotion` |
 | "I just need to calm down." | `grounding_exercise` |
+
+---
+
+### Layer 4B — Support Selection (State Branch)
+
+---
+
+#### `support_select_state` *(new — textKeyByContext)*
+> **Esai says:** [Context-dependent transition to support type selection]
+> - `Anxious` → Steady, grounding tone. "Okay. Let's figure out what would help most."
+> - `Sad` → Gentle, unhurried. "I'm here. What would help right now?"
+> - `Angry` → Calm, not alarmed. "Okay. What do you need from me right now?"
+>
+> **Portrait:** Warm (7) / Calm (12), intensity 1, calm
+
+| Option Label | Goes To | Sets SupportType |
+|---|---|---|
+| "I need to vent." | `action_vent_open` | `Vent` |
+| "Ground me." | `grounding_exercise` | `Grounding` |
+| "Reassurance." | `reassurance_response` | `Reassurance` |
+| "Help me choose one step." | `action_step_prompt` | `OneStep` |
+
+*Note: State branch favors OneStep over Boundary — internal emotional states benefit more from forward traction than boundary sorting. The Boundary option is available via `support_redirect` if needed.*
 
 ---
 
@@ -345,62 +521,48 @@ Key therapeutic principles embedded in the structure:
 
 ---
 
-#### `grounding_exercise` *(existing — keep)*
-> Two-round grounding sequence with check-ins. Already well-built. Routes to `hub_checkin` on success, gentle acknowledgment on failure.
+#### `grounding_exercise` *(existing ✓ — keep entirely)*
+> Two-round grounding sequence. Already complete. Routes to `hub_checkin` on success, gentle fallback on failure.
 
 ---
 
-#### `reassurance_response` *(existing — expand content)*
-> One-beat reassurance, then `hub_checkin`. The structural loop is correct.
-> Holiday should expand to 8–12 variants with `noRepeatWindow: 8` so it stays fresh across sessions.
+#### `reassurance_response` *(existing ✓ — expand content only)*
+> One-beat reassurance, then `hub_checkin`. Structure correct.
+> Holiday: expand to 10–12 variants with `noRepeatWindow: 8`.
 
 ---
 
-#### `one_step_prompt` *(replace dead end)*
-> **Esai says:** "What's the smallest thing that would make today 1% easier? Not the whole to-do list. Just one thing."
-> **Portrait:** Friendly/Warm, intensity 1
-> **Advance:** TapToContinue → `one_step_response`
-
----
-
-#### `one_step_response`
-> **Esai says:** "Okay. Just that. Not the rest — just that one thing. You've got it."
-> **Portrait:** Warm, intensity 1, gentle affirm
-> **Advance:** TapToContinue → `hub_checkin`
-
----
-
-#### `vent_open`
+#### `action_vent_open` *(new)*
 > **Esai says:** "I'm here. Take all the space you need. Say it as messy as it is."
-> **Portrait:** Warm, intensity 2, open — no judgment
-> **Advance:** TapToContinue → `vent_listening`
+> **Portrait:** Warm (7), intensity 2, open — no judgment
+> **Advance:** TapToContinue → `action_vent_listen`
 
 ---
 
-#### `vent_listening`
-> **Esai says:** A brief, non-directive reflection. "I hear you." — Not summarizing, not analyzing. Just present.
-> **Portrait:** Concerned/Warm, intensity 1–2
+#### `action_vent_listen` *(new)*
+> **Esai says:** Brief, non-directive. "I hear you." — present, not analyzing, not summarizing.
+> **Portrait:** Concerned (2) / Warm (7), intensity 1–2
 
 | Option Label | Goes To |
 |---|---|
-| "There's more." | `vent_more` |
-| "I think I've said it." | `vent_reflection` |
+| "There's more." | `action_vent_more` |
+| "I think I've said it." | `action_vent_reflect` |
 | "I'm still really upset." | `support_redirect` |
 
 ---
 
-#### `vent_more`
+#### `action_vent_more` *(new)*
 > **Esai says:** "Keep going. I'm with you."
-> **Portrait:** Warm/Concerned, intensity 1 — steady, holding space
-> **Advance:** TapToContinue → `vent_listening`
+> **Portrait:** Warm (7) / Concerned (2), intensity 1 — steady, holding space
+> **Advance:** TapToContinue → `action_vent_listen`
 
-*This creates the loop: player can cycle through vent_more → vent_listening as many times as needed.*
+*Intentional loop: `action_vent_more` → `action_vent_listen` cycles as many times as the player needs. Venting is rarely one pass.*
 
 ---
 
-#### `vent_reflection`
-> **Esai says:** Thanks them for trusting him. Gentle reflection of what he heard — not analysis, just acknowledgment. "Thank you for trusting me with that. How are you feeling right now?"
-> **Portrait:** Warm, intensity 2
+#### `action_vent_reflect` *(new)*
+> **Esai says:** Thanks them for trusting him. Gentle acknowledgment — not analysis, just witnessing. "Thank you for trusting me with that. How are you feeling right now?"
+> **Portrait:** Warm (7), intensity 2
 
 | Option Label | Goes To |
 |---|---|
@@ -410,57 +572,71 @@ Key therapeutic principles embedded in the structure:
 
 ---
 
-#### `support_redirect`
-> **Esai says:** Not venting first. Redirects with care. "Okay. What would help more right now?"
-> **Portrait:** Concerned/Warm, intensity 1
+#### `support_redirect` *(new)*
+> **Esai says:** Gentle pivot. "Okay. What would help more right now?" — not a failure, just a course correction.
+> **Portrait:** Concerned (2) / Warm (7), intensity 1
 
 | Option Label | Goes To |
 |---|---|
 | "Ground me." | `grounding_exercise` |
 | "Reassurance." | `reassurance_response` |
-| "Help me choose one step." | `one_step_prompt` |
-| "Just stay with me." | `vent_open` |
+| "Help me choose one step." | `action_step_prompt` |
+| "Just stay with me." | `action_vent_open` |
 
-*"Just stay with me" loops back to vent — player may need to vent more before any other mode helps.*
+*"Just stay with me" re-enters vent mode — the player may need more space before any other mode can land.*
 
 ---
 
-#### `boundary_mode`
+#### `action_bound_open` *(new)*
 > **Esai says:** "Let's sort out what's actually yours to carry here."
-> **Portrait:** Calm/Firm, intensity 1 — steady and clear
-> **Advance:** TapToContinue → `boundary_question`
+> **Portrait:** Calm (12) / Firm (3), intensity 1 — steady and clear
+> **Advance:** TapToContinue → `action_bound_question`
 
 ---
 
-#### `boundary_question`
+#### `action_bound_question` *(new)*
 > **Esai says:** "What feels hardest — figuring out what's yours to own, or letting go of what isn't?"
-> **Portrait:** Concerned, intensity 1
+> **Portrait:** Concerned (2), intensity 1
 
 | Option Label | Goes To |
 |---|---|
-| "What's mine to own." | `boundary_own` |
-| "Letting go of what isn't mine." | `boundary_release` |
-| "Both." | `boundary_both` |
+| "What's mine to own." | `action_bound_own` |
+| "Letting go of what isn't mine." | `action_bound_release` |
+| "Both." | `action_bound_both` |
 
 ---
 
-#### `boundary_own`
-> **Esai says:** Helps name what genuinely belongs to them — without shame, with clarity. Validates that owning your part doesn't mean taking all the blame.
-> **Portrait:** Calm/Warm, intensity 1
+#### `action_bound_own` *(new)*
+> **Esai says:** Names what genuinely belongs to them — no shame, with clarity. "Owning your part isn't the same as taking all the blame."
+> **Portrait:** Calm (12) / Warm (7), intensity 1
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-#### `boundary_release`
-> **Esai says:** Helps name what isn't theirs. Gently externalizes what's been internalized. "What someone else chose to do — that belongs to them, not to you."
-> **Portrait:** Warm/Firm, intensity 1
+#### `action_bound_release` *(new)*
+> **Esai says:** Names what isn't theirs. Gentle externalization. "What someone else chose to do — that belongs to them, not to you."
+> **Portrait:** Warm (7) / Firm (3), intensity 1
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
 
-#### `boundary_both`
-> **Esai says:** Acknowledges the complexity. Suggests starting with one end — whichever feels clearest. "Let's not try to do both at once. Which end do you see more clearly right now?"
-> **Portrait:** Calm, intensity 1
+#### `action_bound_both` *(new)*
+> **Esai says:** Acknowledges the complexity without drowning in it. "Let's not try to do both at once. Which end do you see more clearly right now?"
+> **Portrait:** Calm (12), intensity 1
+> **Advance:** TapToContinue → `hub_checkin`
+
+---
+
+#### `action_step_prompt` *(new)*
+> **Esai says:** "What's the smallest thing that would make today 1% easier? Not the whole list. Just one thing."
+> **Portrait:** Friendly (1) / Warm (7), intensity 1
+> **Advance:** TapToContinue → `action_step_confirm`
+
+---
+
+#### `action_step_confirm` *(new)*
+> **Esai says:** "Okay. Just that. Not the rest — just that one thing. You've got it."
+> **Portrait:** Warm (7), intensity 1, gentle affirm
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
@@ -469,189 +645,176 @@ Key therapeutic principles embedded in the structure:
 
 ---
 
-#### `hub_checkin` *(existing — keep, minor expansion)*
+#### `hub_checkin` *(existing — modify options)*
 > **Esai says:** "Where would you like to go from here?"
-> **Portrait:** Neutral/Warm, intensity 1
+> **Portrait:** Neutral (0) / Warm (7), intensity 1
 
 | Option Label | Goes To |
 |---|---|
-| "Check in again." | `root` |
+| "Check in again." | `root` *(clears all state)* |
 | "Try something different." | `support` |
 | "I'll get back to the day." | `session_close` |
 
-*Remove or replace "Something else." → `coming_soon` once content exists. For now keep as placeholder.*
-
 ---
 
-#### `session_close` *(existing — expand content)*
-> **Esai says:** A real goodbye — warm, specific, not perfunctory. "Take care of yourself. I'm here whenever you need."
-> **Portrait:** Warm, intensity 2
+#### `session_close` *(existing ✓ — expand content)*
+> **Esai says:** A real goodbye — warm, unhurried, specific. Not perfunctory.
+> **Portrait:** Warm (7), intensity 2
 > `triggersEndOverlay: true`
+> Holiday: expand to 4–5 variants. These are the last thing a player hears. They should land.
 
 ---
 
 ## Complete Node Reference
 
-| nodeId | Status | Leads To |
-|---|---|---|
-| `root` | existing | okay / support / something / dontknow |
-| `okay` | existing | okay_light / okay_body_check / support |
-| `okay_light` | **new** | okay_celebrate (×4 contexts) |
-| `okay_celebrate` | **new** | hub_checkin |
-| `okay_body_check` | **new** | okay_body_good / okay_body_partial / okay_body_missing |
-| `okay_body_good` | **new** | hub_checkin / support |
-| `okay_body_partial` | **new** | hub_checkin |
-| `okay_body_missing` | **new** | hub_checkin |
-| `support` | existing | vent_open / grounding_exercise / reassurance_response / one_step_prompt |
-| `something` | existing (fix dead ends) | disappointment_clarify / conflict_clarify / loss_clarify / overwhelm_clarify |
-| `disappointment_clarify` | **new** | support_select (context: disappointment) |
-| `conflict_clarify` | **new** | support_select (context: conflict) |
-| `loss_clarify` | **new** | support_select (context: loss) |
-| `overwhelm_clarify` | **new** | support_select (context: overwhelm) |
-| `support_select` | **new** | vent_open / grounding_exercise / boundary_mode / reassurance_response |
-| `dontknow` | existing (expand) | dontknow_body / dontknow_emotion / dontknow_empty / dontknow_all |
-| `dontknow_body` | **new** | dontknow_body_sleep / dontknow_body_food / grounding_exercise |
-| `dontknow_body_sleep` | **new** | hub_checkin |
-| `dontknow_body_food` | **new** | hub_checkin |
-| `dontknow_emotion` | existing (fix options) | emotion_anxious / emotion_sad / emotion_angry / dontknow_empty |
-| `emotion_anxious` | **new** | support_select (context: anxious) |
-| `emotion_sad` | **new** | support_select (context: sad) |
-| `emotion_angry` | **new** | support_select (context: angry) |
-| `dontknow_empty` | existing | dontknow_empty_guide / grounding_exercise |
-| `dontknow_empty_guide` | **new** | hub_checkin |
-| `dontknow_all` | **new** | dontknow_body / dontknow_emotion / grounding_exercise |
-| `vent_open` | **new** | vent_listening |
-| `vent_listening` | **new** | vent_more / vent_reflection / support_redirect |
-| `vent_more` | **new** | vent_listening |
-| `vent_reflection` | **new** | hub_checkin / support_redirect |
-| `support_redirect` | **new** | grounding_exercise / reassurance_response / one_step_prompt / vent_open |
-| `boundary_mode` | **new** | boundary_question |
-| `boundary_question` | **new** | boundary_own / boundary_release / boundary_both |
-| `boundary_own` | **new** | hub_checkin |
-| `boundary_release` | **new** | hub_checkin |
-| `boundary_both` | **new** | hub_checkin |
-| `one_step_prompt` | **new** | one_step_response |
-| `one_step_response` | **new** | hub_checkin |
-| `grounding_exercise` | existing ✓ | grounding_followup_1 |
-| `grounding_followup_1` | existing ✓ | hub_checkin / grounding_exercise_2 |
-| `grounding_exercise_2` | existing ✓ | grounding_followup_2 |
-| `grounding_followup_2` | existing ✓ | hub_checkin / grounding_failed_response_no / grounding_failed_response_dontknow |
-| `grounding_failed_response_no` | existing ✓ | follow_up |
-| `grounding_failed_response_dontknow` | existing ✓ | redirect_prelude |
-| `follow_up` | existing ✓ | hub_checkin |
-| `redirect_prelude` | existing ✓ | hub_redirect |
-| `reassurance_response` | existing ✓ | hub_checkin |
-| `hub_checkin` | existing (expand) | root / support / session_close |
-| `hub_redirect` | existing | root / support / session_close |
-| `coming_soon` | existing (placeholder) | hub_checkin |
-| `session_close` | existing ✓ | — (end) |
+| nodeId | Status | Branch | Leads To |
+|---|---|---|---|
+| `root` | existing ✓ | Gate | okay / support / something / dontknow |
+| `okay` | existing ✓ | Okay | ok_light / ok_body / support |
+| `ok_light` | **new** | Okay | ok_celebrate (×4 contexts) |
+| `ok_celebrate` | **new** | Okay | hub_checkin |
+| `ok_body` | **new** | Okay | ok_body_good / ok_body_partial / ok_body_missing |
+| `ok_body_good` | **new** | Okay | hub_checkin / support |
+| `ok_body_partial` | **new** | Okay | hub_checkin |
+| `ok_body_missing` | **new** | Okay | hub_checkin |
+| `support` | existing (add vent) | Support | action_vent_open / grounding_exercise / reassurance_response / action_step_prompt |
+| `something` | existing (fix next) | Event | event_disappointment / event_conflict / event_loss / event_overwhelm |
+| `event_disappointment` | **new** | Event | support_select_event (context: Disappointment) |
+| `event_conflict` | **new** | Event | support_select_event (context: Conflict) |
+| `event_loss` | **new** | Event | support_select_event (context: Loss) |
+| `event_overwhelm` | **new** | Event | support_select_event (context: Overwhelm) |
+| `support_select_event` | **new** | Event | action_vent_open / grounding_exercise / action_bound_open / reassurance_response |
+| `dontknow` | existing (fix next) | State | state_body / state_emotion / state_empty / state_all |
+| `state_body` | **new** | State | state_body_sleep / state_body_food / grounding_exercise |
+| `state_body_sleep` | **new** | State | hub_checkin |
+| `state_body_food` | **new** | State | hub_checkin |
+| `state_emotion` | **new** | State | state_anxious / state_sad / state_angry / state_empty |
+| `state_anxious` | **new** | State | support_select_state (context: Anxious) |
+| `state_sad` | **new** | State | support_select_state (context: Sad) |
+| `state_angry` | **new** | State | support_select_state (context: Angry) |
+| `state_empty` | **new** | State | state_empty_guide / grounding_exercise |
+| `state_empty_guide` | **new** | State | hub_checkin |
+| `state_all` | **new** | State | state_body / state_emotion / grounding_exercise |
+| `support_select_state` | **new** | State | action_vent_open / grounding_exercise / reassurance_response / action_step_prompt |
+| `action_vent_open` | **new** | Action | action_vent_listen |
+| `action_vent_listen` | **new** | Action | action_vent_more / action_vent_reflect / support_redirect |
+| `action_vent_more` | **new** | Action | action_vent_listen *(loop)* |
+| `action_vent_reflect` | **new** | Action | hub_checkin / support_redirect |
+| `support_redirect` | **new** | Action | grounding_exercise / reassurance_response / action_step_prompt / action_vent_open |
+| `action_bound_open` | **new** | Action | action_bound_question |
+| `action_bound_question` | **new** | Action | action_bound_own / action_bound_release / action_bound_both |
+| `action_bound_own` | **new** | Action | hub_checkin |
+| `action_bound_release` | **new** | Action | hub_checkin |
+| `action_bound_both` | **new** | Action | hub_checkin |
+| `action_step_prompt` | **new** | Action | action_step_confirm |
+| `action_step_confirm` | **new** | Action | hub_checkin |
+| `grounding_exercise` | existing ✓ | Action | grounding_followup_1 |
+| `grounding_followup_1` | existing ✓ | Action | hub_checkin / grounding_exercise_2 |
+| `grounding_exercise_2` | existing ✓ | Action | grounding_followup_2 |
+| `grounding_followup_2` | existing ✓ | Action | hub_checkin / grounding_failed_response_no / grounding_failed_response_dontknow |
+| `grounding_failed_response_no` | existing ✓ | Action | follow_up |
+| `grounding_failed_response_dontknow` | existing ✓ | Action | redirect_prelude |
+| `follow_up` | existing ✓ | Action | hub_checkin |
+| `redirect_prelude` | existing ✓ | Action | hub_redirect |
+| `reassurance_response` | existing ✓ | Action | hub_checkin |
+| `hub_checkin` | existing (modify) | Hub | root / support / session_close |
+| `hub_redirect` | existing ✓ | Hub | root / support / session_close |
+| `coming_soon` | existing (placeholder) | — | hub_checkin |
+| `session_close` | existing ✓ | — | — (end) |
 
-**Total nodes: 17 existing + 27 new = 44 nodes**
+**Total: 18 existing + 34 new = 52 nodes**
 
 ---
 
 ## Text Keys Holiday Needs to Write
 
-All new keys for `Lines.json`. Existing keys not listed here — they're already written.
+Existing keys in Lines.json are not listed unless they need changes. Keys prefixed with `event.`, `state.`, `action.` follow the same branch convention as node IDs.
 
 ### Okay Branch
 
 | Key | Content Direction | Portrait |
 |---|---|---|
-| `okay.light` | "Let's keep it gentle. One small good thing from today?" | Warm 1 |
-| `okay.celebrate.accomplishment` | Celebrates effort + result. "Getting things done while carrying what you carry — that's real." | Warm→Excited low |
-| `okay.celebrate.smile` | Celebrates the *noticing*. "You found it. That's not nothing." | Friendly/Warm |
-| `okay.celebrate.survival` | Full sincerity. "That IS something. You're here." | Warm 2 |
-| `okay.celebrate.anticipation` | "Hold on to that. Having something to look forward to is a form of strength." | Warm/Excited |
-| `okay.body.check` | Body first. Water, food, comfortable? | Friendly 1 |
-| `okay.body.good` | "Good. That's the foundation. Genuinely okay, or more like functional?" | Friendly 1 |
-| `okay.body.partial` | Gentle, not scolding. "Let's close the gap. What's most off?" | Concerned 1 |
-| `okay.body.missing` | "The body speaks first. What's most off right now?" | Concerned 1 |
+| `ok.light` | "Let's keep it gentle. One small good thing from today?" | Warm 1 |
+| `ok.celebrate.accomplishment` | Effort + result. "Getting things done while carrying what you carry — that's real." | Warm→Excited low |
+| `ok.celebrate.smile` | Celebrates the *noticing*. "You found it. That's not nothing." | Friendly/Warm |
+| `ok.celebrate.survival` | Full sincerity. "That IS something. You're here." | Warm 2 |
+| `ok.celebrate.anticipation` | "Hold on to that. Having something to look forward to is a form of strength." | Warm/Excited |
+| `ok.body.check` | Body first. Water, food, comfortable? | Friendly 1 |
+| `ok.body.good` | "Good foundation. Genuinely okay, or more like functional?" | Friendly 1 |
+| `ok.body.partial` | Gentle, no scolding. "Let's close the gap." | Concerned 1 |
+| `ok.body.missing` | "The body speaks first." | Concerned 1 |
 
-### Something Happened Branch
-
-| Key | Content Direction | Portrait |
-|---|---|---|
-| `something.disappointment.react` | Pure empathy beat. Validates the sting of things not going your way. NOT analysis. | Concerned 1–2 |
-| `something.conflict.react` | Immediate warmth. "Ugh." energy. The kind that stays under the skin. | Concerned 2 |
-| `something.loss.react` | Quiet, unhurried. "I'm sorry. Loss is heavy." Don't rush to fix anything. | Sad/Warm |
-| `something.overwhelm.react` | Already exists as `something.overwhelm` — keep, just add `next` target |  |
-| `disappointment.clarify` | "What's sitting heaviest — what you missed, or what it means going forward?" | Concerned 1 |
-| `conflict.clarify` | "What's bothering you most — the situation, or how it made you feel about yourself?" | Concerned 1–2 |
-| `loss.clarify` | "Are you more in the grief, or trying to figure out what comes next?" | Sad 1 — present, not fixing |
-| `overwhelm.clarify` | "Too much to do, or not enough of you to do it — or both?" | Concerned/Warm 1 |
-
-### Support Selection
+### Event Branch (Something Happened)
 
 | Key | Content Direction | Portrait |
 |---|---|---|
-| `support_select.conflict` | "I hear you. What would help most right now?" | Warm 1–2 |
-| `support_select.disappointment` | "Okay. Given that — what do you need from me?" | Warm 1 |
-| `support_select.loss` | "I'm with you. What do you need?" | Warm/Sad — present |
-| `support_select.overwhelm` | "That's a lot. What would help most right now?" | Concerned/Warm 1 |
-| `support_select.anxious` | Transition from emotion validation to "what do you need" | Calm/Warm |
-| `support_select.sad` | Same, gentler tone | Sad/Warm |
-| `support_select.angry` | Same, steady not alarmed | Firm/Warm |
+| `event.disappointment.react` | **Beat 1.** Pure empathy — the sting of things not going your way. No analysis. | Concerned 1–2 |
+| `event.conflict.react` | **Beat 1.** Immediate warmth. "Ugh." energy. | Concerned 2 |
+| `event.loss.react` | **Beat 1.** Quiet, unhurried. "I'm sorry. Loss is heavy." Don't rush to fix. | Sad/Warm |
+| *(reuse `something.overwhelm`)* | **Beat 1 for overwhelm.** Already in Lines.json. | — |
+| `event.disappointment.clarify` | **Beat 2.** "What's sitting heaviest — what you missed, or what it means going forward?" | Concerned 1 |
+| `event.conflict.clarify` | **Beat 2.** "What's bothering you most — the situation, or how it made you feel about yourself?" | Concerned 1–2 |
+| `event.loss.clarify` | **Beat 2.** "Are you more in the grief, or trying to figure out what comes next?" | Sad 1 — present |
+| `event.overwhelm.clarify` | **Beat 2.** "Too much to do, or not enough of you to do it — or both?" | Concerned/Warm 1 |
 
-*Note: These can all be a single key `support_select.prompt` with textKeyByContext variants if that's cleaner. The distinction matters mostly for Holiday's voice calibration.*
-
-### Don't Know Branch
-
-| Key | Content Direction | Portrait |
-|---|---|---|
-| `dontknow.body.check` | "Let's start there. Water, food, sleep — what's most off?" | Concerned/Friendly 1 |
-| `dontknow.body.sleep` | Sleep debt is real damage, not weakness. No lecture. | Concerned 1 |
-| `dontknow.body.food` | Pure care. "Can we get you something?" No guilt. | Warm 1 |
-| `dontknow.emotion.narrow` | "If you had to name it loosely — anxious, sad, angry, or numb?" | Warm/Concerned 1 |
-| `dontknow.emotion.anxious` | Anxiety as nervous system in overdrive, not personal failure. | Calm 1 |
-| `dontknow.emotion.sad` | Sadness doesn't need justification. Just space. | Sad/Warm — present |
-| `dontknow.emotion.angry` | Anger as signal. "The part of you that knows you deserved better." | Firm/Warm — steady |
-| `dontknow.empty.guide` | Minimum viable human. Small specific task. Water, something soft, something familiar. | Warm/Calm |
-| `dontknow.all` | "When everything's off, let's start with the body." Gentle logic, no pressure. | Warm 1 |
-
-### Vent Mode
+### Event Support Selection
 
 | Key | Content Direction | Portrait |
 |---|---|---|
-| `vent.open` | "I'm here. Take all the space you need. Say it as messy as it is." | Warm 2, open |
-| `vent.listening` | Brief, non-directive reflection. Just "I hear you." — present, not analyzing. | Concerned/Warm 1–2 |
-| `vent.more` | "Keep going. I'm with you." | Warm 1, steady |
-| `vent.reflection` | Thanks them for trusting him. Gentle acknowledgment of what was shared. "How are you feeling now?" | Warm 2 |
+| `select.event.conflict` | "I hear you. What would help most right now?" | Warm 1–2 |
+| `select.event.disappointment` | "Okay. Given that — what do you need from me?" | Warm 1 |
+| `select.event.loss` | "I'm with you. What do you need?" | Warm/Sad — present |
+| `select.event.overwhelm` | "That's a lot. What would help most right now?" | Concerned/Warm 1 |
 
-### Boundary Mode
+### State Branch (Don't Know)
 
-| Key | Content Direction | Portrait |
-|---|---|---|
-| `boundary.open` | "Let's sort out what's actually yours to carry here." | Calm/Firm 1 |
-| `boundary.question` | "What feels hardest — figuring out what's yours, or letting go of what isn't?" | Concerned 1 |
-| `boundary.own` | Naming what genuinely belongs to them. No shame. Owning your part ≠ taking all the blame. | Calm/Warm 1 |
-| `boundary.release` | Naming what isn't theirs. Gentle externalization. "What someone else chose — that's theirs." | Warm/Firm 1 |
-| `boundary.both` | Complexity acknowledged. Start with whichever end is clearest. | Calm 1 |
+| Key | Reuse or New | Content Direction | Portrait |
+|---|---|---|---|
+| *(reuse `dontknow.body`)* | reuse | State body node text — already written | — |
+| *(reuse `dontknow.emotion`)* | reuse | State emotion node text — already written | — |
+| *(reuse `dontknow.empty`)* | reuse | State empty node text — already written | — |
+| `state.body.sleep` | **new** | Sleep debt is real damage, not weakness. No lecture. | Concerned 1 |
+| `state.body.food` | **new** | Pure care. "Can we get you something?" Zero guilt. | Warm 1 |
+| `state.anxious.validate` | **new** | Anxiety as nervous system in overdrive, not personal failure. | Calm 1 |
+| `state.sad.validate` | **new** | Sadness doesn't need justification. Just space. | Sad/Warm — present |
+| `state.angry.validate` | **new** | Anger as signal. "The part of you that knows you deserved better." | Firm/Warm — steady |
+| `state.empty.guide` | **new** | Minimum viable human. Small specific task. Water, something soft, something familiar. | Warm/Calm |
+| `state.all` | **new** | "When everything's off, let's start with the body." Gentle logic, no pressure. | Warm 1 |
 
-### One Step Mode
-
-| Key | Content Direction | Portrait |
-|---|---|---|
-| `one_step.prompt` | "Smallest thing that would make today 1% easier? Not the list. Just one thing." | Friendly/Warm 1 |
-| `one_step.response` | "Okay. Just that. Not the rest — just that one thing. You've got it." | Warm 1, gentle affirm |
-
-### Support Redirect
+### State Support Selection
 
 | Key | Content Direction | Portrait |
 |---|---|---|
-| `support.redirect` | "Okay. What would help more right now?" — not a failure, just a pivot | Concerned/Warm 1 |
+| `select.state.anxious` | Steady, grounding tone. "Okay. Let's figure out what would help most." | Calm/Warm |
+| `select.state.sad` | Gentle, unhurried. "I'm here. What would help right now?" | Sad/Warm |
+| `select.state.angry` | Calm, not alarmed. "Okay. What do you need from me right now?" | Firm/Warm |
 
-### Session Close (expand variants)
+### Action Modes
 
 | Key | Content Direction | Portrait |
 |---|---|---|
-| `session_close` | Already exists — Holiday should expand to 4–5 variants. Real goodbyes, not perfunctory. | Warm 2 |
+| `action.vent.open` | "I'm here. Take all the space you need. Say it as messy as it is." | Warm 2, open |
+| `action.vent.listen` | Brief, non-directive. "I hear you." — present, not analyzing. 6–8 variants, noRepeatWindow: 4 | Concerned/Warm 1–2 |
+| `action.vent.more` | "Keep going. I'm with you." 4–6 variants, noRepeatWindow: 3 | Warm 1, steady |
+| `action.vent.reflect` | Thanks for trusting. Gentle witnessing. "How are you feeling right now?" | Warm 2 |
+| `action.bound.open` | "Let's sort out what's actually yours to carry here." | Calm/Firm 1 |
+| `action.bound.question` | "What feels hardest — what's yours to own, or letting go of what isn't?" | Concerned 1 |
+| `action.bound.own` | Naming what genuinely belongs to them. No shame. Owning your part ≠ taking all the blame. | Calm/Warm 1 |
+| `action.bound.release` | Naming what isn't theirs. Gentle externalization. "What someone else chose — that's theirs." | Warm/Firm 1 |
+| `action.bound.both` | Complexity acknowledged. Pick the clearer end first. | Calm 1 |
+| `action.step.prompt` | "Smallest thing that would make today 1% easier? Not the list. Just one." | Friendly/Warm 1 |
+| `action.step.confirm` | "Okay. Just that. Not the rest — just that one thing. You've got it." | Warm 1, gentle affirm |
+| `support.redirect` | "Okay. What would help more right now?" — pivot, not failure | Concerned/Warm 1 |
+
+### Hub and Close (expand variants)
+
+| Key | Content Direction | Portrait |
+|---|---|---|
+| `session_close` | Expand to 4–5 variants. Real goodbyes. Last thing the player hears. They should land. | Warm 2 |
 
 ---
 
 ## Portrait Mood Quick Reference
-
-For Holiday's calibration when writing lines:
 
 | Situation | Mood | Intensity | Notes |
 |---|---|---|---|
@@ -662,34 +825,67 @@ For Holiday's calibration when writing lines:
 | Anger validation | Firm (3) | 1 | Steady, not alarmed |
 | Grounding | Calm (12) | 1 | The regulated nervous system in the room |
 | Gentle accountability | Firm (3) or Neutral (0) | 1 | Not cold, just clear |
-| Boundaries | Firm (3) → Warm (7) | 1 | Clear then warm — not harsh |
+| Boundary clarity | Firm (3) → Warm (7) | 1 | Clear then warm — not harsh |
 | Goodbye | Warm (7) | 2 | Full close |
 
 ---
 
-## Implementation Notes (for dev)
+## Implementation Notes
 
-### Existing nodes that need fixes
+### Existing Nodes That Need Fixes
 
-1. **`something` options** — `responseTextKey` fields are populated but `next` is not set. Add `next` fields pointing to the four clarify nodes.
-2. **`dontknow` options** — same issue. Add `next` fields.
-3. **`okay` options** — `keep_light` and `quick_checkin` options use `responseTextKey` but have no `next`. Wire to `okay_celebrate` / `okay_body_check`.
-4. **`support` node** — expand from 3 options to 4 (add `vent_open`).
-5. **`hub_checkin`** — swap "Something else." → "Try something different." pointing to `support`.
+1. **`something` options** — add `next` to each option pointing to `event_disappointment`, `event_conflict`, `event_loss`, `event_overwhelm`. Add `entryContext` on each option matching the EventType enum value.
+2. **`dontknow` options** — remove `responseTextKey`, add `next` pointing to `state_body`, `state_emotion`, `state_empty`. Add fourth option for `state_all`.
+3. **`okay` options** — `keep_light` and `quick_checkin` options: wire `next` to `ok_light` and `ok_body` respectively.
+4. **`support` node** — add "I need to vent." option routing to `action_vent_open`.
+5. **`hub_checkin`** — replace "Something else." / `coming_soon` with "Try something different." / `support`.
+6. **`hub_redirect`** — same change as hub_checkin.
 
-### `textKeyByContext` usage
+### entryContext Chaining (short-term implementation)
 
-Several new nodes use context-based text variation. The existing `TextKeyByContextEntry` struct handles this. New nodes using it:
-- `okay_celebrate` — 4 contexts (accomplishment / smile / survival / anticipation)
-- `support_select` — 4+ contexts (conflict / disappointment / loss / overwhelm / anxious / sad / angry)
+To carry EventType or EmotionState context from branch entry through clarification to support_select, set `entryContext` on every option in the chain with the same value:
 
-### vent loop
-`vent_open → vent_listening → vent_more → vent_listening` is an intentional loop. The player can cycle as many times as needed. This is by design — venting isn't always one pass.
+```
+// Example: conflict path
+something option: entryContext = "Conflict", next = event_conflict
+event_conflict option: entryContext = "Conflict", next = support_select_event
+// support_select_event uses textKeyByContext to show the "Conflict" lead-in line
+```
 
-### No TapToContinue + Options in same node
-The current `NodeDef` has either `TapToContinue` (tapContinueNodeId) or `WaitForChoice` (options). Nodes like `emotion_anxious` use TapToContinue to deliver a validation beat before routing to support_select. Nodes like `support_select` use WaitForChoice. These are separate nodes, not combined.
+Each option in the chain re-sets the context. This is explicit and slightly redundant but requires no code changes to the existing system.
+
+### Persistent State Fields (medium-term implementation)
+
+Add to `WheelMenuController`:
+
+```csharp
+public EventType CurrentEvent { get; private set; } = EventType.None;
+public EmotionState CurrentEmotion { get; private set; } = EmotionState.Unknown;
+public SupportType CurrentSupport { get; private set; } = SupportType.None;
+
+private void ClearSessionState()
+{
+    CurrentEvent = EventType.None;
+    CurrentEmotion = EmotionState.Unknown;
+    CurrentSupport = SupportType.None;
+}
+```
+
+Call `ClearSessionState()` when navigating to `root` via "Check in again" and on session start. Set individual variables when entering specific nodes. This decouples persistent state from per-navigation entryContext and enables future action mode variants.
+
+### Text Key Reuse
+
+The existing keys `dontknow.body`, `dontknow.emotion`, `dontknow.empty` are reused as the `textKey` fields of `state_body`, `state_emotion`, `state_empty` respectively. Their content is correct — they just lacked routing.
+
+### Vent Loop Is Intentional
+
+`action_vent_open → action_vent_listen → action_vent_more → action_vent_listen` is a deliberate cycle. Venting is rarely one pass. The loop terminates when the player picks "I think I've said it" or "I'm still upset." There is no forced exit.
+
+### TapToContinue vs. WaitForChoice
+
+Validation beat nodes (`state_anxious`, `state_sad`, `state_angry`, `action_bound_open`, `action_step_prompt`, etc.) use `TapToContinue` to deliver their content before presenting the next choice. This enforces the two-beat rhythm — Esai speaks, player acknowledges, then chooses. Never the reverse.
 
 ---
 
-*Design by SheDreamsWithAIs. Flow architecture consultation by Aethon. Document authored Claude/Sonnet.*
+*Design by SheDreamsWithAIs. Architecture consultation by Aethon. Document authored by Claude/Sonnet.*
 *Lines to be written by Holiday (Claude/Opus).*

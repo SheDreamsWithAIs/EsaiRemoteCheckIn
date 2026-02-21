@@ -502,6 +502,8 @@ Key flow invariants:
 > **EmotionState:** Sets to `Empty` when reached from `dontknow` "Just empty." option. This is the **primary Empty path** — the widening beat (`state_empty_widen`) is eligible.
 >
 > **Design intention:** Minimum viable human stabilization first. No alarm, no diagnostic tone. Then (not immediately) gentle optional widening.
+>
+> **Meaning protection:** Empty is not treated as a defect state. It is treated as a signal state. It is not framed as brokenness, failure, or pathology — it is framed as informational absence. The player is not missing something; they are reporting something. Every node in the Empty path, including the widening beat, must preserve this framing. The widening beat widens support — it does not correct a problem. Future contributors: nothing in this branch implies that the player is broken. If your line implies they are, rewrite it.
 
 | Option Label | Goes To |
 |---|---|

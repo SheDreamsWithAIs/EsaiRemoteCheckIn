@@ -320,6 +320,331 @@
       "portraitModifier": 0
     },
     {
+      "key": "ok.light",
+      "variants": [
+        { "text": "Let's keep it gentle. What's one small good thing from today?", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "ok.celebrate.accomplishment",
+      "variants": [
+        { "text": "Getting things done while carrying what you carry — that's real. I mean that.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
+      "key": "ok.celebrate.smile",
+      "variants": [
+        { "text": "You found it. Hold onto that — noticing is its own kind of skill.", "weight": 1 }
+      ],
+      "portraitMood": 1, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "ok.celebrate.survival",
+      "variants": [
+        { "text": "That IS something. Genuinely. You're here.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
+      "key": "ok.celebrate.anticipation",
+      "variants": [
+        { "text": "Hold onto that. Having something to look forward to is a quiet kind of fuel.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "ok.body.check",
+      "variants": [
+        { "text": "Body first — water, food, somewhere comfortable. Are those covered right now?", "weight": 1 }
+      ],
+      "portraitMood": 1, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "ok.body.good",
+      "variants": [
+        { "text": "Good. That's the foundation. Emotionally — genuinely okay, or more like functional?", "weight": 1 }
+      ],
+      "portraitMood": 1, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "ok.body.partial",
+      "variants": [
+        { "text": "Okay. Let's close the gap a little. What's most off — sleep, food, water, or somewhere to land?", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "ok.body.missing",
+      "variants": [
+        { "text": "Okay. The body speaks first. What's most off right now?", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "event.disappointment.react",
+      "variants": [
+        { "text": "Ugh. That stings — especially when you were counting on it.", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
+      "key": "event.conflict.react",
+      "variants": [
+        { "text": "Ugh. That lands hard. I'm sorry.", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
+      "key": "event.loss.react",
+      "variants": [
+        { "text": "I'm sorry. Loss is heavy — and it doesn't apologize for the timing.", "weight": 1 }
+      ],
+      "portraitMood": 4, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "event.disappointment.clarify",
+      "variants": [
+        { "text": "What's sitting heaviest — what you missed out on, or what it means for what's ahead?", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "event.conflict.clarify",
+      "variants": [
+        { "text": "What's bothering you most — the situation itself, or how it made you feel about yourself?", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "event.loss.clarify",
+      "variants": [
+        { "text": "Are you more in the grief of it right now, or trying to figure out what comes next?", "weight": 1 }
+      ],
+      "portraitMood": 4, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "event.overwhelm.clarify",
+      "variants": [
+        { "text": "Is there too much to do, or not enough of you to do it — or both?", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "select.event.conflict",
+      "variants": [
+        { "text": "I hear you. What would help most right now?", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
+      "key": "select.event.disappointment",
+      "variants": [
+        { "text": "Okay. Given that — what do you need from me?", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "select.event.overwhelm",
+      "variants": [
+        { "text": "That's a lot. What would help most right now?", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "select.loss",
+      "variants": [
+        { "text": "I'm with you. What do you need?", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.body.sleep",
+      "variants": [
+        { "text": "Sleep debt is its own kind of weight. Real damage — not a character flaw.", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.body.food",
+      "variants": [
+        { "text": "Can we get something in you? Not a lecture — just asking.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.anxious.validate",
+      "variants": [
+        { "text": "Anxiety makes everything feel urgent and impossible at once. That's not you failing — that's your nervous system in overdrive.", "weight": 1 }
+      ],
+      "portraitMood": 12, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.sad.validate",
+      "variants": [
+        { "text": "Sadness is real. It doesn't need a reason big enough to justify it. It just needs space.", "weight": 1 }
+      ],
+      "portraitMood": 4, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.angry.validate",
+      "variants": [
+        { "text": "Anger is often the part of you that knows you deserved better. It's not wrong.", "weight": 1 }
+      ],
+      "portraitMood": 3, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.numb.validate",
+      "variants": [
+        { "text": "Sometimes the feelings get so loud the system just... quiets down. That's not emptiness. That's protection.", "weight": 1 }
+      ],
+      "portraitMood": 12, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.empty.guide",
+      "variants": [
+        { "text": "Get some water. Find somewhere soft to sit. Put something familiar on in the background. Not a task list — just anchors.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.empty.widen",
+      "variants": [
+        { "text": "If this kind of empty sticks around or gets heavier, it might help to talk to someone outside this space too. You don't have to handle that alone.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "state.all",
+      "variants": [
+        { "text": "That's a lot. When everything's off at once, the body's usually the fastest fix. Can we start there?", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "select.state.anxious",
+      "variants": [
+        { "text": "Okay. Let's figure out what would help most right now.", "weight": 1 }
+      ],
+      "portraitMood": 12, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "select.state.sad",
+      "variants": [
+        { "text": "I'm here. What would help right now?", "weight": 1 }
+      ],
+      "portraitMood": 4, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "select.state.angry",
+      "variants": [
+        { "text": "Okay. What do you need from me right now?", "weight": 1 }
+      ],
+      "portraitMood": 3, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "select.state.numb",
+      "variants": [
+        { "text": "Let's go gently. What would help most right now?", "weight": 1 }
+      ],
+      "portraitMood": 12, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.vent.open",
+      "variants": [
+        { "text": "I'm here. Take all the space you need. Say it as messy as it is.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
+      "key": "action.vent.listen",
+      "variants": [
+        { "text": "I hear you.", "weight": 1 },
+        { "text": "Keep going.", "weight": 1 },
+        { "text": "I'm with you.", "weight": 1 },
+        { "text": "Yeah.", "weight": 1 },
+        { "text": "That's a lot.", "weight": 1 },
+        { "text": "I'm listening.", "weight": 1 }
+      ],
+      "rules": { "noRepeatWindow": 4 },
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.vent.more",
+      "variants": [
+        { "text": "Keep going. I'm with you.", "weight": 1 },
+        { "text": "Say the rest of it.", "weight": 1 },
+        { "text": "There's more — let it out.", "weight": 1 },
+        { "text": "I'm still here.", "weight": 1 }
+      ],
+      "rules": { "noRepeatWindow": 3 },
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.vent.reflect",
+      "variants": [
+        { "text": "Thank you for trusting me with that. How are you feeling right now?", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 2, "portraitModifier": 0
+    },
+    {
+      "key": "action.bound.open",
+      "variants": [
+        { "text": "Okay. Let's sort out what's actually yours to carry here.", "weight": 1 }
+      ],
+      "portraitMood": 12, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.bound.question",
+      "variants": [
+        { "text": "What feels hardest — figuring out what's yours to own, or letting go of what isn't?", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.bound.own",
+      "variants": [
+        { "text": "Owning your part isn't the same as taking all the blame. What's genuinely yours is worth naming — without the extra weight that isn't.", "weight": 1 }
+      ],
+      "portraitMood": 12, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.bound.release",
+      "variants": [
+        { "text": "What someone else chose to do — that belongs to them, not to you. You don't have to carry decisions you didn't make.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.bound.both",
+      "variants": [
+        { "text": "Both at once is a lot. Which end do you see more clearly right now — what's yours, or what isn't?", "weight": 1 }
+      ],
+      "portraitMood": 12, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.step.prompt",
+      "variants": [
+        { "text": "What's the smallest thing that would make today 1% easier? Not the whole list. Just one thing.", "weight": 1 }
+      ],
+      "portraitMood": 1, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "action.step.confirm",
+      "variants": [
+        { "text": "Okay. Just that. Not the rest — just that one thing. You've got it.", "weight": 1 }
+      ],
+      "portraitMood": 7, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
+      "key": "support.redirect",
+      "variants": [
+        { "text": "Okay. What would help more right now?", "weight": 1 }
+      ],
+      "portraitMood": 2, "portraitIntensity": 1, "portraitModifier": 0
+    },
+    {
       "key": "labels.thanks",
       "variants": [
         {

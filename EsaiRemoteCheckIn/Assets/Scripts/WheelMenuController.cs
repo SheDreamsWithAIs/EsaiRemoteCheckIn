@@ -4,6 +4,10 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+// Session state enums — see CheckInFlowDesign.md: Internal State Model
+public enum EventType   { None, Conflict, Loss, Disappointment, Overwhelm }
+public enum EmotionState { Unknown, Anxious, Sad, Angry, Numb, Empty, Neutral }
+public enum SupportType  { None, Vent, Grounding, Reassurance, Boundary, OneStep }
 
 public class WheelMenuController : MonoBehaviour
 {
@@ -40,6 +44,13 @@ public class WheelMenuController : MonoBehaviour
 
     /// <summary>True when the player can go back one step.</summary>
     public bool CanGoBack => nodeHistory.Count > 0;
+
+    // Persistent session state — see CheckInFlowDesign.md: State Reset & Loop Behavior.
+    // Set by node routing; cleared on root re-entry and session close.
+    // Current use: entryContext chaining. Future use: action mode lead-in variants.
+    public EventType    CurrentEvent   { get; private set; } = EventType.None;
+    public EmotionState CurrentEmotion { get; private set; } = EmotionState.Unknown;
+    public SupportType  CurrentSupport { get; private set; } = SupportType.None;
 
     private struct HistoryEntry
     {
@@ -331,6 +342,11 @@ public class WheelMenuController : MonoBehaviour
             endOverlayCoroutine = null;
         }
 
+        // Clear session state whenever we return to root (Check in again flow).
+        // Does not fire on initial Awake load (pushHistory is false there).
+        if (nodeId == "root" && pushHistory)
+            ClearSessionState();
+
         if (pushHistory && (currentNodeId != nodeId || isShowingResponseLine))
         {
             nodeHistory.Push(new HistoryEntry(currentNodeId, isShowingResponseLine, currentEntryContext, currentSelectedVariantId, _currentResolvedPortraitKey));
@@ -374,6 +390,27 @@ public class WheelMenuController : MonoBehaviour
         }
 
         ClearOptions();
+
+        // TapToContinue: show a single Continue button that advances to the next node.
+        // The current entryContext is forwarded so context-aware nodes downstream render correctly.
+        if (node.AdvanceMode == AdvanceMode.TapToContinue && !string.IsNullOrEmpty(node.TapContinueNodeId))
+        {
+            if (wheelOptionsContainer != null) wheelOptionsContainer.gameObject.SetActive(true);
+            var tapLayoutParent = wheelOptionsLayoutParent != null ? wheelOptionsLayoutParent : wheelOptionsContainer;
+            var tapBtn = Instantiate(wheelOptionButtonPrefab, tapLayoutParent);
+            var tapLabel = tapBtn.GetComponentInChildren<TMP_Text>();
+            if (tapLabel != null)
+            {
+                var labelResult = _linesService.GetLine("labels.continue");
+                tapLabel.text = labelResult.text;
+            }
+            var tapNextId = node.TapContinueNodeId;
+            var tapContext = currentEntryContext;
+            tapBtn.onClick.AddListener(() => ShowNode(tapNextId, pushHistory: true, tapContext, replayVariantId: -1));
+            if (tapLayoutParent is RectTransform tapRt && tapLayoutParent.GetComponent<RadialLayoutGroup>() != null)
+                LayoutRebuilder.ForceRebuildLayoutImmediate(tapRt);
+            return;
+        }
 
         if (node.Options == null || node.Options.Count == 0)
         {
@@ -424,6 +461,41 @@ public class WheelMenuController : MonoBehaviour
                     }
                     return;
                 }
+
+                // Two-beat: responseTextKey (Beat 1 empathy) + next (Beat 2 destination).
+                // Shows Beat 1 inline, then replaces options with a single Continue button.
+                if (!string.IsNullOrEmpty(captureOpt.ResponseTextKey) && !string.IsNullOrEmpty(captureOpt.NextNodeId))
+                {
+                    var lineResult = _linesService.GetLine(captureOpt.ResponseTextKey);
+                    nodeHistory.Push(new HistoryEntry(currentNodeId, isShowingResponseLine, currentEntryContext, currentSelectedVariantId, _currentResolvedPortraitKey));
+                    isShowingResponseLine = true;
+                    esaiResponseText.text = lineResult.text;
+                    lastLine = lineResult.text;
+                    if (_portraitResolver != null && portraitImage != null && nodes.TryGetValue(currentNodeId, out var beatOneNode))
+                    {
+                        var portraitReq = lineResult.portraitRequest ?? beatOneNode.PortraitRequest;
+                        var result = _portraitResolver.Resolve(portraitReq);
+                        portraitImage.sprite = result.sprite;
+                        portraitImage.enabled = result.sprite != null;
+                        _currentResolvedPortraitKey = result.resolvedKey;
+                    }
+                    ClearOptions();
+                    var beatLp = wheelOptionsLayoutParent != null ? wheelOptionsLayoutParent : wheelOptionsContainer;
+                    var continueBtn = Instantiate(wheelOptionButtonPrefab, beatLp);
+                    var continueLabel = continueBtn.GetComponentInChildren<TMP_Text>();
+                    if (continueLabel != null)
+                    {
+                        var lr = _linesService.GetLine("labels.continue");
+                        continueLabel.text = lr.text;
+                    }
+                    var beatTwoNodeId = captureOpt.NextNodeId;
+                    var beatTwoContext = captureOpt.EntryContext;
+                    continueBtn.onClick.AddListener(() => ShowNode(beatTwoNodeId, pushHistory: true, beatTwoContext, replayVariantId: -1));
+                    if (beatLp is RectTransform beatRt && beatLp.GetComponent<RadialLayoutGroup>() != null)
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(beatRt);
+                    return;
+                }
+
                 if (!string.IsNullOrEmpty(captureOpt.NextNodeId))
                 {
                     ShowNode(captureOpt.NextNodeId, pushHistory: true, captureOpt.EntryContext, replayVariantId: -1);
@@ -585,8 +657,21 @@ public class WheelMenuController : MonoBehaviour
 
     public void EndSession()
     {
+        ClearSessionState();
         if (endOverlayPanel != null)
             endOverlayPanel.SetActive(true);
+    }
+
+    /// <summary>
+    /// Resets all session state variables to defaults.
+    /// Called on root re-entry ("Check in again") and on session close.
+    /// See CheckInFlowDesign.md: State Reset &amp; Loop Behavior.
+    /// </summary>
+    private void ClearSessionState()
+    {
+        CurrentEvent   = EventType.None;
+        CurrentEmotion = EmotionState.Unknown;
+        CurrentSupport = SupportType.None;
     }
 
     public void CancelEndSession()

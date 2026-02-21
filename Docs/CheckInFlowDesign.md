@@ -1,9 +1,11 @@
-# Esai Check-In Mode: Conversation Flow Design (v2)
+# Esai Check-In Mode: Conversation Flow Design (v3)
 
 **Document purpose:** Full node-graph architecture for Check-In Mode.
 This is the spec Holiday writes lines against and the dev implements in `CreateCheckInModule.cs`.
 
 **v2 changes from v1:** Internal state model added; `support_select` split into event and state variants; node naming convention established; two-beat pacing formalized as a named design rule; state persistence rules documented.
+
+**v3 changes from v2:** `Numb` and `Empty` split into distinct `EmotionState` values with separate flows; `state_numb` reconnection node added; `state_empty_widen` soft safety-widening beat added (post-stabilization only); `support_select_loss` node introduced (Loss context replaces Boundary with OneStep); Loss context ambiguity resolved; State Reset & Loop Behavior section added; Node Integrity Confirmation added; Context Routing Rule documented.
 
 ---
 
@@ -62,7 +64,8 @@ EmotionState
   Anxious       — player named "anxious"
   Sad           — player named "sad"
   Angry         — player named "angry"
-  Numb          — player named "numb" (routes to state_empty)
+  Numb          — protective shutdown; player named "numb" (routes to state_numb — reconnection work)
+  Empty         — persistent flatness, absence of signal; player selected "Just empty" from dontknow (routes to state_empty — stabilization + optional widening)
   Neutral       — player reported okay
 
 SupportType
@@ -96,6 +99,7 @@ Set these when specific nodes are entered, independent of entryContext. This dec
 |---|---|---|
 | `EventType` | Option in `something` | Player picks Conflict / Loss / Disappointment / Overwhelm |
 | `EmotionState` | Option in `state_emotion` | Player picks Anxious / Sad / Angry / Numb |
+| `EmotionState` | Option "Just empty." in `dontknow` | Set to Empty (primary Empty path — widening beat eligible) |
 | `EmotionState` | Entering `okay_body_good` "genuinely okay" path | Set to Neutral |
 | `SupportType` | Option in `support`, `support_select_event`, `support_select_state` | Player picks support type |
 
@@ -341,11 +345,11 @@ Key flow invariants:
 
 | Option Label | Goes To | entryContext |
 |---|---|---|
-| "In the grief." | `support_select_event` | `Loss` |
-| "Figuring out what's next." | `support_select_event` | `Loss` |
-| "I don't know." | `support_select_event` | `Loss` |
+| "In the grief." | `support_select_loss` | `Loss` |
+| "Figuring out what's next." | `support_select_loss` | `Loss` |
+| "I don't know." | `support_select_loss` | `Loss` |
 
-*Loss note: At `support_select_event`, the Loss context should surface "Help me figure out what's next" as an option variant OR Holiday writes the boundary option with loss-appropriate language ("What's mine to sit with"). Either approach works.*
+*Loss note: All options route to `support_select_loss` — a dedicated support selection node for Loss context. The Boundary option ("Help me understand what's mine") is replaced with OneStep ("Help me figure out what's next"). See `support_select_loss` below.*
 
 ---
 
@@ -382,6 +386,23 @@ Key flow invariants:
 | "Ground me." | `grounding_exercise` | `Grounding` |
 | "Help me understand what's mine." | `action_bound_open` | `Boundary` |
 | "Just steady me." | `reassurance_response` | `Reassurance` |
+
+---
+
+---
+
+#### `support_select_loss` *(new)*
+> **Esai says:** "I'm with you. What do you need?"
+> **Portrait:** Warm (7) / Sad (4), intensity 1 — present, not fixing
+
+| Option Label | Goes To | Sets SupportType |
+|---|---|---|
+| "I need to vent." | `action_vent_open` | `Vent` |
+| "Ground me." | `grounding_exercise` | `Grounding` |
+| "Just steady me." | `reassurance_response` | `Reassurance` |
+| "Help me figure out what's next." | `action_step_prompt` | `OneStep` |
+
+*Loss note: "Help me understand what's mine" (Boundary) is intentionally absent in the loss context. Grief rarely maps to ownership sorting — asking what's "yours to carry" during loss can feel like blame. "Help me figure out what's next" (OneStep) offers forward traction without implying the player should be further along in processing. This is the locked-in approach — `support_select_loss` is the dedicated variant, not a text key change to `support_select_event`.*
 
 ---
 
@@ -439,7 +460,7 @@ Key flow invariants:
 | "Anxious." | `state_anxious` | `Anxious` |
 | "Sad." | `state_sad` | `Sad` |
 | "Angry." | `state_angry` | `Angry` |
-| "Numb." | `state_empty` | `Numb` |
+| "Numb." | `state_numb` | `Numb` |
 
 ---
 
@@ -464,9 +485,23 @@ Key flow invariants:
 
 ---
 
+#### `state_numb` *(new)*
+> **Esai says:** Gentle naming — protective shutdown as the nervous system doing its job. "Sometimes the feelings get so loud the system just... quiets down. That's not emptiness. That's protection."
+> **Portrait:** Calm (12) / Warm (7), intensity 1 — regulated, unhurried
+>
+> **Design intention:** Reconnection work. Sensory anchoring, gentle emotional naming. No escalation language. Numb is something Esai can usually help with directly.
+>
+> **Advance:** TapToContinue → `support_select_state` (entryContext: `Numb`)
+
+---
+
 #### `state_empty` *(new — reuses existing `dontknow.empty` text key)*
 > **Esai says:** "You're allowed to be empty. Let's do minimum-viable-human — just the basics, no guilt."
 > **Portrait:** Warm (7), intensity 2
+>
+> **EmotionState:** Sets to `Empty` when reached from `dontknow` "Just empty." option. This is the **primary Empty path** — the widening beat (`state_empty_widen`) is eligible.
+>
+> **Design intention:** Minimum viable human stabilization first. No alarm, no diagnostic tone. Then (not immediately) gentle optional widening.
 
 | Option Label | Goes To |
 |---|---|
@@ -478,6 +513,24 @@ Key flow invariants:
 #### `state_empty_guide` *(new)*
 > **Esai says:** Small, specific, practical. Get water, sit somewhere soft, put on something familiar. A quiet nudge, not a task list.
 > **Portrait:** Warm (7) / Calm (12)
+> **Advance:** TapToContinue → `state_empty_widen`
+
+---
+
+#### `state_empty_widen` *(new)*
+> **Esai says:** Soft, optional-feeling, never alarming. Not diagnostic. No implication of brokenness or defect.
+>
+> *"If this kind of empty sticks around or gets heavier, it might help to talk to someone outside this space too. You don't have to handle that alone."*
+>
+> **Portrait:** Warm (7), intensity 1 — gentle, no urgency
+>
+> **Design intention:** Minimum viable safety widening. This is a seed of permission, not medical advice. It preserves agency by framing external support as an option, not a directive.
+>
+> **Conditions (must all hold):**
+> - This node appears ONLY after `state_empty_guide` (stabilization first — widening is never the first beat)
+> - EmotionState = `Empty` must be the **primary state for this session**, set from `dontknow` "Just empty." — not set incidentally during venting or other content
+> - If the player reached `state_empty` via `grounding_exercise` redirect (i.e., they chose "Help me calm down." at `state_empty`), the widening beat is bypassed — the grounding path does not run through `state_empty_guide`
+>
 > **Advance:** TapToContinue → `hub_checkin`
 
 ---
@@ -503,6 +556,7 @@ Key flow invariants:
 > - `Anxious` → Steady, grounding tone. "Okay. Let's figure out what would help most."
 > - `Sad` → Gentle, unhurried. "I'm here. What would help right now?"
 > - `Angry` → Calm, not alarmed. "Okay. What do you need from me right now?"
+> - `Numb` → Gentle, unhurried reconnection tone. "Let's go gently. What would help most right now?"
 >
 > **Portrait:** Warm (7) / Calm (12), intensity 1, calm
 
@@ -681,19 +735,22 @@ Key flow invariants:
 | `something` | existing (fix next) | Event | event_disappointment / event_conflict / event_loss / event_overwhelm |
 | `event_disappointment` | **new** | Event | support_select_event (context: Disappointment) |
 | `event_conflict` | **new** | Event | support_select_event (context: Conflict) |
-| `event_loss` | **new** | Event | support_select_event (context: Loss) |
+| `event_loss` | **new** | Event | **support_select_loss** |
 | `event_overwhelm` | **new** | Event | support_select_event (context: Overwhelm) |
 | `support_select_event` | **new** | Event | action_vent_open / grounding_exercise / action_bound_open / reassurance_response |
+| `support_select_loss` | **new** | Event | action_vent_open / grounding_exercise / reassurance_response / action_step_prompt |
 | `dontknow` | existing (fix next) | State | state_body / state_emotion / state_empty / state_all |
 | `state_body` | **new** | State | state_body_sleep / state_body_food / grounding_exercise |
 | `state_body_sleep` | **new** | State | hub_checkin |
 | `state_body_food` | **new** | State | hub_checkin |
-| `state_emotion` | **new** | State | state_anxious / state_sad / state_angry / state_empty |
+| `state_emotion` | **new** | State | state_anxious / state_sad / state_angry / **state_numb** |
 | `state_anxious` | **new** | State | support_select_state (context: Anxious) |
 | `state_sad` | **new** | State | support_select_state (context: Sad) |
 | `state_angry` | **new** | State | support_select_state (context: Angry) |
+| `state_numb` | **new** | State | support_select_state (context: Numb) |
 | `state_empty` | **new** | State | state_empty_guide / grounding_exercise |
-| `state_empty_guide` | **new** | State | hub_checkin |
+| `state_empty_guide` | **new** | State | **state_empty_widen** |
+| `state_empty_widen` | **new** | State | hub_checkin |
 | `state_all` | **new** | State | state_body / state_emotion / grounding_exercise |
 | `support_select_state` | **new** | State | action_vent_open / grounding_exercise / reassurance_response / action_step_prompt |
 | `action_vent_open` | **new** | Action | action_vent_listen |
@@ -722,7 +779,8 @@ Key flow invariants:
 | `coming_soon` | existing (placeholder) | — | hub_checkin |
 | `session_close` | existing ✓ | — | — (end) |
 
-**Total: 18 existing + 34 new = 52 nodes**
+**Total: 18 existing + 38 new = 56 nodes**
+*(v3 additions: `state_numb`, `state_empty_widen`, `support_select_loss` +3 from v2's 52)*
 
 ---
 
@@ -763,7 +821,8 @@ Existing keys in Lines.json are not listed unless they need changes. Keys prefix
 |---|---|---|
 | `select.event.conflict` | "I hear you. What would help most right now?" | Warm 1–2 |
 | `select.event.disappointment` | "Okay. Given that — what do you need from me?" | Warm 1 |
-| `select.event.loss` | "I'm with you. What do you need?" | Warm/Sad — present |
+| `select.event.loss` | *(Not used — Loss routes to `support_select_loss`, which has a fixed textKey rather than textKeyByContext)* | — |
+| `select.loss` | "I'm with you. What do you need?" — fixed textKey for `support_select_loss` | Warm/Sad — present |
 | `select.event.overwhelm` | "That's a lot. What would help most right now?" | Concerned/Warm 1 |
 
 ### State Branch (Don't Know)
@@ -778,7 +837,9 @@ Existing keys in Lines.json are not listed unless they need changes. Keys prefix
 | `state.anxious.validate` | **new** | Anxiety as nervous system in overdrive, not personal failure. | Calm 1 |
 | `state.sad.validate` | **new** | Sadness doesn't need justification. Just space. | Sad/Warm — present |
 | `state.angry.validate` | **new** | Anger as signal. "The part of you that knows you deserved better." | Firm/Warm — steady |
+| `state.numb.validate` | **new** | Protective shutdown as the nervous system doing its job. "Sometimes the feelings get so loud the system just quiets down. That's not emptiness. That's protection." | Calm/Warm 1 |
 | `state.empty.guide` | **new** | Minimum viable human. Small specific task. Water, something soft, something familiar. | Warm/Calm |
+| `state.empty.widen` | **new** | Soft optional external support mention. "If this kind of empty sticks around or gets heavier, it might help to talk to someone outside this space too. You don't have to handle that alone." No alarm, no diagnostic tone. | Warm 1, gentle |
 | `state.all` | **new** | "When everything's off, let's start with the body." Gentle logic, no pressure. | Warm 1 |
 
 ### State Support Selection
@@ -788,6 +849,7 @@ Existing keys in Lines.json are not listed unless they need changes. Keys prefix
 | `select.state.anxious` | Steady, grounding tone. "Okay. Let's figure out what would help most." | Calm/Warm |
 | `select.state.sad` | Gentle, unhurried. "I'm here. What would help right now?" | Sad/Warm |
 | `select.state.angry` | Calm, not alarmed. "Okay. What do you need from me right now?" | Firm/Warm |
+| `select.state.numb` | Gentle, unhurried reconnection tone. "Let's go gently. What would help most right now?" | Calm/Warm 1 |
 
 ### Action Modes
 
@@ -883,7 +945,108 @@ The existing keys `dontknow.body`, `dontknow.emotion`, `dontknow.empty` are reus
 
 ### TapToContinue vs. WaitForChoice
 
-Validation beat nodes (`state_anxious`, `state_sad`, `state_angry`, `action_bound_open`, `action_step_prompt`, etc.) use `TapToContinue` to deliver their content before presenting the next choice. This enforces the two-beat rhythm — Esai speaks, player acknowledges, then chooses. Never the reverse.
+Validation beat nodes (`state_anxious`, `state_sad`, `state_angry`, `state_numb`, `action_bound_open`, `action_step_prompt`, etc.) use `TapToContinue` to deliver their content before presenting the next choice. This enforces the two-beat rhythm — Esai speaks, player acknowledges, then chooses. Never the reverse.
+
+---
+
+## State Reset & Loop Behavior
+
+### What Persists Through `hub_checkin`
+
+`hub_checkin` itself does **not** reset state. All three state variables (`CurrentEvent`, `CurrentEmotion`, `CurrentSupport`) persist while the player is at the hub.
+
+| Player Action at Hub | Effect on State |
+|---|---|
+| "Try something different." → `support` | State **persists.** EventType and EmotionState remain set. |
+| "Check in again." → `root` | State **clears.** All three reset to defaults (None / Unknown / None). |
+| "I'll get back to the day." → `session_close` | State **clears.** All three reset on session end. |
+
+### What Resets on `session_close`
+
+All three state variables are cleared when `session_close` triggers the end overlay. No state persists across sessions.
+
+### Context in a Second Check-In
+
+If a player selects "Check in again." from `hub_checkin`, they re-enter `root` and all state resets. The second check-in begins from a clean slate — EventType, EmotionState, and SupportType from the first loop are gone.
+
+This is intentional: a second check-in is a fresh emotional start, not a continuation. A player who vented about a conflict, reached the hub, and chose to check in again is starting over — Esai does not carry implicit memory of what was shared.
+
+### Vent Loop State Behavior
+
+The vent loop (`action_vent_open → action_vent_listen → action_vent_more → action_vent_listen`) does **not** mutate state — it holds it. EventType and EmotionState remain what they were when the player entered vent mode. The loop terminates when the player selects "I think I've said it" or "I'm still really upset." There is no forced exit.
+
+Incidental emotional language within the vent loop (e.g., a player mentioning feeling empty while venting about a conflict) does **not** set or change EmotionState. State is only set by explicit node routing, not by content. This is why the `state_empty_widen` widening beat is scoped to the primary Empty path (from `dontknow` → `state_empty`) and never triggers based on what the player says.
+
+---
+
+## Node Integrity Confirmation
+
+### No Dual-Mode Nodes
+
+Confirmed: no node combines `TapToContinue` with choice options. Every node is exclusively one or the other:
+
+- **TapToContinue nodes:** validation beats, stabilization beats, action mode content, widening beat (`state_numb`, `state_anxious`, `state_sad`, `state_angry`, `state_empty_guide`, `state_empty_widen`, `state_body_sleep`, `state_body_food`, `ok_body_partial`, `ok_body_missing`, `ok_celebrate`, `action_vent_open`, `action_vent_more`, `action_bound_open`, `action_step_prompt`, `action_step_confirm`, `action_bound_own`, `action_bound_release`, `action_bound_both`, `grounding_exercise` series)
+- **WaitForChoice nodes:** all routing and selection nodes
+
+This is a structural invariant. A node that presents a TapToContinue beat and also offers choice options is a spec violation.
+
+### All Paths Route to Hub or Valid Node
+
+Confirmed: every branch terminates at `hub_checkin`, `session_close`, or a valid intermediate node. Dead-end branches verified:
+
+- `dontknow` → all four options have valid `next` targets (`state_body` / `state_emotion` / `state_empty` / `state_all`) ✓
+- `something` → all four options have valid `next` targets with `entryContext` ✓
+- `state_emotion` → all four options route cleanly (`state_anxious` / `state_sad` / `state_angry` / **`state_numb`**) ✓
+- `state_empty` → both options route cleanly (`state_empty_guide` → `state_empty_widen` → `hub_checkin`; `grounding_exercise` path bypasses widening) ✓
+- `event_loss` → routes to **`support_select_loss`** (not `support_select_event`) ✓
+- `support_select_loss` → all four options have valid action mode targets ✓
+- No node routes to `coming_soon` in the primary flow — `hub_checkin` and `hub_redirect` route to `support` ✓
+
+### No Orphaned Text Keys
+
+Text keys from prior versions reused in current routing:
+
+| Key | Reused As | Status |
+|---|---|---|
+| `dontknow.body` | `textKey` of `state_body` | ✓ |
+| `dontknow.emotion` | `textKey` of `state_emotion` | ✓ |
+| `dontknow.empty` | `textKey` of `state_empty` | ✓ |
+| `something.overwhelm` | `responseTextKey` on `something` overwhelm option | ✓ |
+
+No placeholder routing (`coming_soon`) remains in primary flow paths.
+
+---
+
+## Context Routing Rule for `support_select` Nodes
+
+### The Rule
+
+Support selection nodes use `textKeyByContext` to vary lead-in text at render time. Choice options are **identical** across context variants. Routing does **not** split by context into different node IDs — one node handles all contexts via `textKeyByContext`.
+
+```
+// Correct pattern
+node: support_select_event
+textKeyByContext:
+  Conflict     → select.event.conflict
+  Disappointment → select.event.disappointment
+  Loss         → [not used — Loss has its own node]
+  Overwhelm    → select.event.overwhelm
+options: identical across all contexts
+```
+
+### The Exception: `support_select_loss`
+
+`support_select_loss` is a dedicated node (not just a context variant of `support_select_event`) because the **choice options themselves differ** — OneStep replaces Boundary in the loss context. This is the only justified reason to create a separate `support_select_` node: when the option set changes, not just the lead-in text.
+
+### Future Contributor Rule
+
+- **Add a text key variant** if you need new context-specific lead-in text for a new EventType or EmotionState.
+- **Create a new `support_select_` node** only if the choice options themselves change for that context.
+- Do not create a new node just to vary wording. `textKeyByContext` handles that.
+
+### Action Mode Nodes Are Context-Agnostic
+
+Action mode nodes (`action_vent_open`, `grounding_exercise`, `action_step_prompt`, etc.) do not fork by context at the node level. They receive EventType and EmotionState from persistent state fields but use them for Holiday's line variants within those modes, not for architectural routing. Context-aware action mode lead-ins are a future variant — not implemented in v3.
 
 ---
 
